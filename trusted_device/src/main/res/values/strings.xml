@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">Fazpass SDK</string>
+    <string name="notification_message">Someone is trying to login with your account on device %s. Is that you?</string>
+    <string name="notification_input_hint">Input pin...</string>
+    <string name="notification_title">Confirm login</string>
+</resources>

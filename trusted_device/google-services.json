@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "444587746027",
+    "project_id": "trusted-device-d512e",
+    "storage_bucket": "trusted-device-d512e.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:444587746027:android:9e9b132dc5ca5be6b9d4ae",
+        "android_client_info": {
+          "package_name": "com.fazpass.mockapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "444587746027-seicjs2h22iq7ba12r04v1fmj7mr7bto.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAa6hfF8ewu_duZM2q7rk19W69FCaPLTcQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "444587746027-seicjs2h22iq7ba12r04v1fmj7mr7bto.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:444587746027:android:ecfc436c1022f801b9d4ae",
+        "android_client_info": {
+          "package_name": "com.fazpass.trusted_device"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "444587746027-seicjs2h22iq7ba12r04v1fmj7mr7bto.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAa6hfF8ewu_duZM2q7rk19W69FCaPLTcQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "444587746027-seicjs2h22iq7ba12r04v1fmj7mr7bto.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
