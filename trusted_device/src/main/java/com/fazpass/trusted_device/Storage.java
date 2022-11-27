@@ -2,13 +2,11 @@ package com.fazpass.trusted_device;
 
 import static com.fazpass.trusted_device.BASE.FAZPASS;
 
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.net.Uri;
 import android.util.Base64;
 
 import androidx.annotation.NonNull;
