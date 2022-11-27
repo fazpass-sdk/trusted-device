@@ -46,7 +46,7 @@ publishing {
             groupId = 'com.fazpass'
             artifactId = getArtifactId()
             version = getVersionName()
-            artifact("artifact/${getArtifactId()}-release.aar")
+            artifact("build/outputs/aar/${getArtifactId()}-release.aar")
         }
     }
 }
