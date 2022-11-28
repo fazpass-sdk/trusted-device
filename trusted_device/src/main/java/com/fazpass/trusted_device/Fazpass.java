@@ -2,6 +2,9 @@ package com.fazpass.trusted_device;
 
 import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.telephony.SubscriptionManager;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -15,6 +18,9 @@ import com.fazpass.trusted_device.internet.request.RemoveDeviceRequest;
 import com.framgia.android.emulator.EmulatorDetector;
 
 import java.util.ArrayList;
+
+import io.sentry.Sentry;
+import io.sentry.android.core.SentryAndroid;
 
 public abstract class Fazpass extends TrustedDevice{
 
@@ -71,10 +77,10 @@ public abstract class Fazpass extends TrustedDevice{
                         throw new SecurityException("Device rooted or is an emulator lib stage");
                     }
                 });
-/*        SentryAndroid.init(context, options -> {
+        SentryAndroid.init(context, options -> {
             options.setDsn("https://1f85de8be5544aaab7847e377b4c6227@o1173329.ingest.sentry.io/6720667");
             options.setTracesSampleRate(1.0);
-        });*/
+        });
         switch (mode){
             case DEBUG:
                 Storage.storeDataLocal(context, BASE_URL, DEBUG);
@@ -120,9 +126,7 @@ public abstract class Fazpass extends TrustedDevice{
         Helper.sentryMessage("REMOVE_DEVICE", body);
         remove(ctx, body).subscribe(resp->{
             Storage.removeDataLocal(ctx);
-        }, err->{
-
-        });
+        }, Sentry::captureException);
     }
 
     /**

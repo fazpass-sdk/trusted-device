@@ -65,6 +65,7 @@ import at.favre.lib.crypto.bcrypt.BCrypt;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
+import io.sentry.Sentry;
 import kotlin.text.Regex;
 
 abstract class TrustedDevice extends BASE {
@@ -312,7 +313,7 @@ abstract class TrustedDevice extends BASE {
 
                             }, err -> {
                                 subscriber.onError(err);
-
+                                Sentry.captureException(err);
                             }
                     );
         });
@@ -368,7 +369,7 @@ abstract class TrustedDevice extends BASE {
                 super.onAuthenticationError(errorCode, errString);
                 Exception e = Error.biometricError();
                 listener.onFailure(e);
-              
+                Sentry.captureException(e);
             }
 
             @Override
@@ -402,7 +403,7 @@ abstract class TrustedDevice extends BASE {
                 super.onAuthenticationFailed();
                 Exception e = Error.biometricFailed();
                 listener.onFailure(e);
-              
+                Sentry.captureException(e);
             }
         });
     }
@@ -448,7 +449,7 @@ abstract class TrustedDevice extends BASE {
                 listener.onFailure(Error.pinNotMatch());
             }
         } catch (JSONException e) {
-          
+            Sentry.captureException(e);
             e.printStackTrace();
         }
     }
@@ -571,6 +572,7 @@ abstract class TrustedDevice extends BASE {
         if (anyDeclinedPermission(context, new String[]{Manifest.permission.RECEIVE_SMS})) {
             String err = "RECEIVE_SMS permission is not granted. Hence, autofill otp will be disabled.";
             Log.e("AUTOFILL SMS", err);
+            listener.onError(new Throwable(err));
             return;
         }
 
@@ -615,6 +617,7 @@ abstract class TrustedDevice extends BASE {
         if (anyDeclinedPermission(context, new String[]{Manifest.permission.READ_PHONE_STATE, Manifest.permission.READ_CALL_LOG})) {
             String err = "READ_PHONE_STATE and READ_CALL_LOG permission are not granted. Hence, autofill otp will be disabled.";
             Log.e("AUTOFILL MISCALL", err);
+            listener.onError(new Throwable(err));
             return;
         }
 

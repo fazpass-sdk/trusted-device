@@ -8,19 +8,19 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Handler;
 import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.biometric.BiometricPrompt;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-
 import com.fazpass.trusted_device.internet.request.EnrollDeviceRequest;
 import com.fazpass.trusted_device.internet.request.RemoveDeviceRequest;
 import com.fazpass.trusted_device.internet.response.CheckUserResponse;
 
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.UUID;
 
+import io.sentry.Sentry;
 
 public class FazpassTd extends Fazpass{
     private final CheckUserResponse cUser;
@@ -84,7 +84,10 @@ public class FazpassTd extends Fazpass{
         EnrollDeviceRequest body = collectDataEnroll(ctx, user,pin, false);
         Helper.sentryMessage("ENROLL_DEVICE_BY_PIN", body);
         enroll(ctx, body).subscribe(resp-> enroll.onSuccess(new EnrollStatus(resp.getStatus(),resp.getMessage())),
-                enroll::onFailure);
+                err->{
+                    enroll.onFailure(err);
+                    Sentry.captureException(err);
+                });
     }
 
     /**
@@ -100,7 +103,7 @@ public class FazpassTd extends Fazpass{
         EnrollDeviceRequest body = collectDataEnroll(ctx, user,pin, false);
         Helper.sentryMessage("ENROLL_DEVICE_BY_PIN", body);
         enroll(ctx, body).subscribe(resp-> {},
-                err->{});
+                Sentry::captureException);
     }
 
     /**
@@ -117,21 +120,23 @@ public class FazpassTd extends Fazpass{
             @Override
             public void onAuthenticationError(int errorCode, @NonNull CharSequence errString) {
                 super.onAuthenticationError(errorCode, errString);
+                Exception e = Error.biometricError();
+                Sentry.captureException(e);
             }
 
             @Override
             public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
                 super.onAuthenticationSucceeded(result);
                 EnrollDeviceRequest body = collectDataEnroll(ctx, user, pin, true);
-                enroll(ctx, body).subscribe(resp-> {
-
-                },err->{});
-
+                Helper.sentryMessage("ENROLL_DEVICE_BY_FINGER", body);
+                enroll(ctx, body).subscribe(resp-> {}, Sentry::captureException);
             }
 
             @Override
             public void onAuthenticationFailed() {
                 super.onAuthenticationFailed();
+                Exception e = Error.biometricFailed();
+                Sentry.captureException(e);
             }
         });
     }
@@ -164,6 +169,7 @@ public class FazpassTd extends Fazpass{
             Storage.removeDataLocal(ctx);
         }, err->{
             listener.onFailure(err);
+            Sentry.captureException(err);
         });
     }
 

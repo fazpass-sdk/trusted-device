@@ -12,7 +12,6 @@ android {
         targetSdk 33
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
-        multiDexEnabled true
     }
 
     buildTypes {
@@ -46,7 +45,7 @@ publishing {
             groupId = 'com.fazpass'
             artifactId = getArtifactId()
             version = getVersionName()
-            artifact("build/outputs/aar/${getArtifactId()}-release.aar")
+            artifact("artifact/${getArtifactId()}-release.aar")
         }
     }
 }
@@ -65,7 +64,7 @@ dependencies {
     implementation 'androidx.biometric:biometric:1.1.0'
     implementation 'com.scottyab:rootbeer-lib:0.1.0'
     implementation 'at.favre.lib:bcrypt:0.9.0'
-//    implementation 'io.sentry:sentry-android:6.4.1'
+    implementation 'io.sentry:sentry-android:6.4.1'
     implementation 'org.apache.commons:commons-lang3:3.12.0'
     implementation 'io.reactivex.rxjava3:rxjava:3.1.5'
     implementation 'io.reactivex.rxjava3:rxandroid:3.0.0'
