@@ -4,40 +4,37 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build;
 import android.provider.Settings;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.iid.InstanceIdResult;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.scottyab.rootbeer.RootBeer;
-
-import java.util.concurrent.atomic.AtomicReference;
 
 
 class Device {
     private final Context context;
-    private String device;
+    static String name;
     static String notificationToken;
 
     public Device(Context context) {
         this.context = context;
         initialize(context);
-        FirebaseInstanceId.getInstance().getInstanceId()
-                .addOnCompleteListener(task -> {
-                    if (!task.isSuccessful()) {
-                        return;
+        FirebaseMessaging.getInstance().getToken()
+                .addOnCompleteListener(new OnCompleteListener<String>() {
+                    @Override
+                    public void onComplete(@NonNull Task<String> task) {
+                        if (!task.isSuccessful()) {
+                            return;
+                        }
+                        notificationToken = task.getResult();
                     }
-                    // Get new Instance ID token
-                    notificationToken = task.getResult().getToken();
                 });
     }
 
     private void initialize(Context context){
-        this.device = readMeta()+"-"+generateAppId(context);
+        Device.name = readMeta()+"-"+generateAppId(context);
     }
 
     @SuppressLint("HardwareIds")
@@ -72,14 +69,6 @@ class Device {
     boolean isRooted() {
         RootBeer rootBeer = new RootBeer(context);
         return rootBeer.isRooted();
-    }
-
-    String getDevice() {
-        return device;
-    }
-
-    public String getNotificationToken() {
-        return notificationToken;
     }
 
 }

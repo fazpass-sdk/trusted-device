@@ -25,18 +25,10 @@ public abstract class Fazpass extends TrustedDevice{
             throw new NullPointerException("merchant id cannot be null or empty");
         }
         Device d = new Device(context);
-        if(d.isEmulator()){
+        if(EmulatorDetector.isEmulator() || d.isRooted()){
             throw new SecurityException("Device rooted or is an emulator lib stage");
         }
         Storage.storeDataLocal(context, MERCHANT_TOKEN, merchantToken);
-        /*EmulatorDetector.with(context)
-                .addPackageName("com.browserstack")
-                .setDebug(true)
-                .detect(isEmulator -> {
-                    if(isEmulator){
-                        throw new SecurityException("Device rooted or is an emulator lib stage");
-                    }
-                });*/
         SentryAndroid.init(context, options -> {
             options.setDsn("https://1f85de8be5544aaab7847e377b4c6227@o1173329.ingest.sentry.io/6720667");
             options.setTracesSampleRate(1.0);

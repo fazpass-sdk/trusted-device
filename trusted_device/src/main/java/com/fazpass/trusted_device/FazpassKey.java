@@ -25,17 +25,14 @@ class FazpassKey {
     private static String meta;
     private String pin;
     private User user;
-    private Device device;
-
     public FazpassKey(){
 
     }
 
-    public FazpassKey(Context context, User user, Device device, String pin) {
+    public FazpassKey(Context context, User user, String pin) {
         this.context = context;
         this.pin = BCrypt.withDefaults().hashToString(12, pin.toCharArray());;
         this.user = user;
-        this.device = device;
         initialize();
     }
 
@@ -62,7 +59,7 @@ class FazpassKey {
             json.put(USER_PHONE, user.getPhone());
             json.put(USER_EMAIL, user.getEmail());
             json.put(USER_PIN, pin);
-            json.put(DEVICE, device.getDevice());
+            json.put(DEVICE, Device.name);
             return json.toString();
         } catch (JSONException e) {
             e.printStackTrace();

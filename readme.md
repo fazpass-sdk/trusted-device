@@ -12,7 +12,6 @@ allprojects {
 	maven {
            url "https://jitpack.io"
             // You can obtain by contacting us
-           credentials { username authToken } 
            }
 	}
 }
@@ -23,6 +22,19 @@ allprojects {
 ```
 ## Minimum OS
 API 24 / Android 7.0 / Nougat 
+
+## Target SDK
+We use newest version of androidx library so make sure you use this configuration
+```gradle
+ android {
+    compileSdk 33
+
+    defaultConfig {
+        minSdk 24
+        targetSdk 33
+        .....
+ 
+```
 ## Permission
 As default this SDK used these permissions
 ```xml

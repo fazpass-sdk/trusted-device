@@ -17,3 +17,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "sdk"
 include ':trusted_device'
+include ':app'

@@ -95,9 +95,8 @@ abstract class TrustedDevice extends BASE {
     @NonNull
     protected EnrollDeviceRequest collectDataEnroll(Context ctx, User user, String pin, boolean isUseFinger) {
         Sim sim = new Sim(ctx);
-        Device device = new Device(ctx);
         Connection c = new Connection(ctx);
-        FazpassKey key = new FazpassKey(ctx, user, device, pin);
+        FazpassKey key = new FazpassKey(ctx, user, pin);
         GeoLocation geo = new GeoLocation(ctx);
         Contact contact = new Contact(ctx);
 /*        List<EnrollDeviceRequest.Contact> contactBody = new ArrayList<>();
@@ -120,8 +119,8 @@ abstract class TrustedDevice extends BASE {
         }
         return new EnrollDeviceRequest(
                 user.getName(), user.getEmail(), user.getPhone(), user.getIdCard(), user.getAddress(),
-                device.getDevice(), ctx.getPackageName(), true, isUseFinger, true, c.isUseVpn(),
-                device.getNotificationToken(), key.getMeta(), key.getPubKey(), geo.getTimezone(), contact.getContacts().size(), locationBody, simBody);
+                Device.name, ctx.getPackageName(), true, isUseFinger, true, c.isUseVpn(),
+                Device.notificationToken, key.getMeta(), key.getPubKey(), geo.getTimezone(), contact.getContacts().size(), locationBody, simBody);
     }
 
     protected ValidateDeviceRequest collectDataValidate(Context ctx) {
@@ -154,7 +153,7 @@ abstract class TrustedDevice extends BASE {
             ValidateDeviceRequest.Sim smBody = new ValidateDeviceRequest.Sim(s.getSerialNumber(), s.getPhoneNumber());
             simBody.add(smBody);
         }
-        return new ValidateDeviceRequest(userId, device.getDevice(), ctx.getPackageName(),
+        return new ValidateDeviceRequest(userId, Device.name, ctx.getPackageName(),
                 meta, key, geo.getTimezone(), contactBody, locationBody, simBody);
     }
 
@@ -162,7 +161,7 @@ abstract class TrustedDevice extends BASE {
         Device device = new Device(ctx);
         GeoLocation geo = new GeoLocation(ctx);
         RemoveDeviceRequest.Location l = new RemoveDeviceRequest.Location(geo.getLatitude(), geo.getLongitude());
-        return new RemoveDeviceRequest(userId, ctx.getPackageName(), device.getDevice(), l, geo.getTimezone());
+        return new RemoveDeviceRequest(userId, ctx.getPackageName(), Device.name, l, geo.getTimezone());
     }
 
     protected LastActiveRequest collectDataLastActive(Context ctx, String userId) {
@@ -170,7 +169,7 @@ abstract class TrustedDevice extends BASE {
         GeoLocation geo = new GeoLocation(ctx);
         LastActiveRequest.Location l = new LastActiveRequest.Location(geo.getLatitude(), geo.getLongitude());
         return new LastActiveRequest(userId, ctx.getPackageName(),
-                device.getDevice(), geo.getTimezone(), l);
+                Device.name, geo.getTimezone(), l);
     }
 
     protected Observable<Response> updateLastActive(Context ctx, String userId) {
@@ -257,10 +256,9 @@ abstract class TrustedDevice extends BASE {
             throw new NullPointerException("email or phone cannot be empty");
         }
         String packageName = ctx.getPackageName();
-        Device device = new Device(ctx);
         GeoLocation location = new GeoLocation(ctx);
         CheckUserRequest.Location locationDetail = new CheckUserRequest.Location(location.getLatitude(), location.getLongitude());
-        CheckUserRequest body = new CheckUserRequest(email, phone, packageName, device.getDevice(), location.getTimezone(), locationDetail);
+        CheckUserRequest body = new CheckUserRequest(email, phone, packageName, Device.name, location.getTimezone(), locationDetail);
         Helper.sentryMessage("CHECK", body);
         return Observable.create(subscriber -> {
             UseCase u = Roaming.start(Storage.readDataLocal(ctx, BASE_URL));
@@ -348,11 +346,11 @@ abstract class TrustedDevice extends BASE {
                 .filter(app -> app.getApp().equals(ctx.getPackageName())).collect(Collectors.toList());
         List<NotificationRequest.Device> receiver = new ArrayList<>();
         for (CheckUserResponse.App device : devices) {
-            NotificationRequest.Device r = new NotificationRequest.Device(device.getApp(), device.getDevice());
+            NotificationRequest.Device r = new NotificationRequest.Device(device.getApp(), Device.name);
             receiver.add(r);
         }
         String notificationToken = Device.notificationToken;
-        String thisDevice = new Device(ctx).getDevice();
+        String thisDevice = Device.name;
         NotificationRequest body = new NotificationRequest(timeOut, notificationToken, notificationId, userId, receiver, thisDevice);
         Helper.sentryMessage("SEND_NOTIFICATION", body);
         requestNotification(ctx, body).subscribe(s -> {
@@ -489,7 +487,7 @@ abstract class TrustedDevice extends BASE {
             String meta = Storage.readDataLocal(ctx, META);
             String userId = Storage.readDataLocal(ctx, USER_ID);
             String packageName = ctx.getPackageName();
-            String device = new Device(ctx).getDevice();
+            String device = Device.name;
             UseCase u = Roaming.start(Storage.readDataLocal(ctx, BASE_URL));
             UpdateFcmRequest body = new UpdateFcmRequest(userId, packageName, device, token, meta);
             u.updateFcm("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body)

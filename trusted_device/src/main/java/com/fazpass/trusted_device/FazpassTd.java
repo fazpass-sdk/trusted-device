@@ -50,7 +50,7 @@ public class FazpassTd extends Fazpass{
             String hashedInformation = resp.getApps().getCurrent().getMeta();
             String jsonString = Crypto.decrypt(hashedInformation, password);
             JSONObject json = new JSONObject(jsonString);
-            if(json.getString(PACKAGE_NAME).equals(context.getPackageName())&& json.getString(DEVICE).equals(device.getDevice())){
+            if(json.getString(PACKAGE_NAME).equals(context.getPackageName())&& json.getString(DEVICE).equals(Device.name)){
                 td_status = TRUSTED_DEVICE.TRUSTED;
                 User.setIsUseFinger(resp.getApps().getCurrent().isUse_fingerprint());
                 updateLastActive(context, Storage.readDataLocal(context, USER_ID));
