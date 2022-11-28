@@ -26,7 +26,7 @@ public abstract class Fazpass extends TrustedDevice{
             throw new NullPointerException("merchant id cannot be null or empty");
         }
         Storage.storeDataLocal(context, MERCHANT_TOKEN, merchantToken);
-//        new Device(context);
+        new Device(context);
         EmulatorDetector.with(context)
                 .addPackageName("com.browserstack")
                 .setDebug(true)

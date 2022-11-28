@@ -32,7 +32,7 @@ android {
 }
 
 def getVersionName = { ->
-    return "1.0.16" // Replace with version Name
+    return "1.0.17" // Replace with version Name
 }
 
 def getArtifactId = { ->
@@ -45,7 +45,7 @@ publishing {
             groupId = 'com.fazpass'
             artifactId = getArtifactId()
             version = getVersionName()
-            artifact("artifact/${getArtifactId()}-release.aar")
+            artifact("$buildDir/outputs/aar/${getArtifactId()}-release.aar")
         }
     }
 }
