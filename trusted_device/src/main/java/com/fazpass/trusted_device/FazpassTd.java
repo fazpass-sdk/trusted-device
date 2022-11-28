@@ -8,16 +8,17 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Handler;
 import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.biometric.BiometricPrompt;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
 import com.fazpass.trusted_device.internet.request.EnrollDeviceRequest;
 import com.fazpass.trusted_device.internet.request.RemoveDeviceRequest;
 import com.fazpass.trusted_device.internet.response.CheckUserResponse;
 
 import org.json.JSONObject;
 
-import java.util.ArrayList;
 import java.util.UUID;
 
 import io.sentry.Sentry;

@@ -2,9 +2,6 @@ package com.fazpass.trusted_device;
 
 import android.content.Context;
 import android.content.Intent;
-import android.net.ConnectivityManager;
-import android.telephony.SubscriptionManager;
-import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -24,51 +21,12 @@ import io.sentry.android.core.SentryAndroid;
 
 public abstract class Fazpass extends TrustedDevice{
 
-  /*  public static TrustedDevice initialize(Context context, String merchantToken, int merchantLogo, MODE mode){
-        Storage.storeDataLocal(context, LOGO, merchantLogo);
-        Storage.storeDataLocal(context, MERCHANT_TOKEN, merchantToken);
-        //Preparing to create FCM
-        Device device = new Device(context);
-        EmulatorDetector.with(context)
-                .addPackageName("com.browserstack")
-                .setDebug(true)
-                .detect(isEmulator -> {
-                    if(isEmulator){
-                        throw new SecurityException("Device rooted or is an emulator lib stage");
-                    }
-                });
-        //Setting sentry
-        SentryAndroid.init(context, options -> {
-            options.setDsn("https://1f85de8be5544aaab7847e377b4c6227@o1173329.ingest.sentry.io/6720667");
-            options.setTracesSampleRate(1.0);
-        });
-        if (merchantToken == null || merchantToken.equals("")){
-            throw new NullPointerException("merchant id cannot be null or empty");
-        }
-        else if (device.isRooted() || device.isEmulator()){
-            throw new SecurityException("Device rooted or is an emulator");
-        }
-        switch (mode){
-            case DEBUG:
-                Storage.storeDataLocal(context, BASE_URL, DEBUG);
-                break;
-            case STAGING:
-                Storage.storeDataLocal(context, BASE_URL, STAGING);
-                break;
-            case PRODUCTION:
-                Storage.storeDataLocal(context, BASE_URL, PRODUCTION);
-                break;
-        }
-        return new FazpassTd(context);
-    }
-*/
-
     public static void initialize(Context context, String merchantToken, MODE mode){
         if (merchantToken == null || merchantToken.equals("")){
             throw new NullPointerException("merchant id cannot be null or empty");
         }
         Storage.storeDataLocal(context, MERCHANT_TOKEN, merchantToken);
-        new Device(context);
+//        new Device(context);
         EmulatorDetector.with(context)
                 .addPackageName("com.browserstack")
                 .setDebug(true)

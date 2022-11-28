@@ -1,12 +1,7 @@
 package com.fazpass.trusted_device;
 
 import static android.media.RingtoneManager.getDefaultUri;
-import static com.fazpass.trusted_device.BASE.BASE_URL;
-import static com.fazpass.trusted_device.BASE.LOGO;
-import static com.fazpass.trusted_device.BASE.MERCHANT_TOKEN;
-import static com.fazpass.trusted_device.BASE.META;
 import static com.fazpass.trusted_device.BASE.PRIVATE_KEY;
-import static com.fazpass.trusted_device.BASE.USER_ID;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -22,16 +17,10 @@ import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-import com.fazpass.trusted_device.internet.Roaming;
-import com.fazpass.trusted_device.internet.UseCase;
-import com.fazpass.trusted_device.internet.request.UpdateFcmRequest;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
 import java.util.Objects;
-
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class NotificationService extends FirebaseMessagingService {
     @Override

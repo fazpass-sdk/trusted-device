@@ -8,9 +8,12 @@ import static com.fazpass.trusted_device.BASE.PUBLIC_KEY;
 import static com.fazpass.trusted_device.BASE.USER_EMAIL;
 import static com.fazpass.trusted_device.BASE.USER_PHONE;
 import static com.fazpass.trusted_device.BASE.USER_PIN;
+
 import android.content.Context;
+
 import org.json.JSONException;
 import org.json.JSONObject;
+
 import java.util.UUID;
 
 import at.favre.lib.crypto.bcrypt.BCrypt;

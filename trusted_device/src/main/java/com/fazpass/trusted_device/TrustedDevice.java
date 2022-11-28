@@ -572,7 +572,6 @@ abstract class TrustedDevice extends BASE {
         if (anyDeclinedPermission(context, new String[]{Manifest.permission.RECEIVE_SMS})) {
             String err = "RECEIVE_SMS permission is not granted. Hence, autofill otp will be disabled.";
             Log.e("AUTOFILL SMS", err);
-            listener.onError(new Throwable(err));
             return;
         }
 
@@ -617,7 +616,6 @@ abstract class TrustedDevice extends BASE {
         if (anyDeclinedPermission(context, new String[]{Manifest.permission.READ_PHONE_STATE, Manifest.permission.READ_CALL_LOG})) {
             String err = "READ_PHONE_STATE and READ_CALL_LOG permission are not granted. Hence, autofill otp will be disabled.";
             Log.e("AUTOFILL MISCALL", err);
-            listener.onError(new Throwable(err));
             return;
         }
 

@@ -1,7 +1,5 @@
 package com.fazpass.trusted_device;
 
-import com.google.gson.annotations.SerializedName;
-
 public class OtpResponse {
     private final boolean status;
     private final String message;

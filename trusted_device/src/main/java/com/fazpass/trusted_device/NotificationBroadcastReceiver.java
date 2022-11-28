@@ -8,23 +8,15 @@ import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.util.Log;
 import android.widget.Toast;
 
 import com.fazpass.trusted_device.internet.Roaming;
 import com.fazpass.trusted_device.internet.UseCase;
 import com.fazpass.trusted_device.internet.request.ConfirmStatusRequest;
-import com.google.firebase.messaging.FirebaseMessaging;
 
-import java.util.Map;
 import java.util.Objects;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.annotations.NonNull;
-import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.core.Observer;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class NotificationBroadcastReceiver extends BroadcastReceiver {
