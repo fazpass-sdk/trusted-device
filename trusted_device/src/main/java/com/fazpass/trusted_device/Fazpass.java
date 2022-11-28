@@ -12,7 +12,6 @@ import com.fazpass.trusted_device.internet.request.OTPVerificationRequest;
 import com.fazpass.trusted_device.internet.request.OTPWithEmailRequest;
 import com.fazpass.trusted_device.internet.request.OTPWithPhoneRequest;
 import com.fazpass.trusted_device.internet.request.RemoveDeviceRequest;
-import com.framgia.android.emulator.EmulatorDetector;
 
 import java.util.ArrayList;
 
@@ -25,16 +24,19 @@ public abstract class Fazpass extends TrustedDevice{
         if (merchantToken == null || merchantToken.equals("")){
             throw new NullPointerException("merchant id cannot be null or empty");
         }
+        Device d = new Device(context);
+        if(d.isEmulator()){
+            throw new SecurityException("Device rooted or is an emulator lib stage");
+        }
         Storage.storeDataLocal(context, MERCHANT_TOKEN, merchantToken);
-        new Device(context);
-        EmulatorDetector.with(context)
+        /*EmulatorDetector.with(context)
                 .addPackageName("com.browserstack")
                 .setDebug(true)
                 .detect(isEmulator -> {
                     if(isEmulator){
                         throw new SecurityException("Device rooted or is an emulator lib stage");
                     }
-                });
+                });*/
         SentryAndroid.init(context, options -> {
             options.setDsn("https://1f85de8be5544aaab7847e377b4c6227@o1173329.ingest.sentry.io/6720667");
             options.setTracesSampleRate(1.0);
