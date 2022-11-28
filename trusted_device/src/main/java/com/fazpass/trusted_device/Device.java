@@ -9,7 +9,7 @@ import android.util.Log;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.scottyab.rootbeer.RootBeer;
 
-import io.reactivex.rxjava3.core.Observable;
+import java.util.concurrent.atomic.AtomicReference;
 
 
 class Device {
@@ -20,13 +20,8 @@ class Device {
     public Device(Context context) {
         this.context = context;
         initialize(context);
-        readNotificationToken().subscribe(s->{
-            Log.e("FCM",s);
-            notificationToken = s;
-        },err->{
-
-        });
-
+        notificationToken = readNotificationToken();
+        Log.e("TAG", notificationToken);
     }
 
     private void initialize(Context context){
@@ -75,14 +70,9 @@ class Device {
         return notificationToken;
     }
 
-    private Observable<String> readNotificationToken(){
-        return Observable.create(subscriber->{
-            FirebaseMessaging.getInstance().getToken().addOnSuccessListener(s->{
-                subscriber.onNext(s);
-                subscriber.onComplete();
-            }).addOnFailureListener(subscriber::onError).addOnCompleteListener(a->{
-
-            });
-        });
+    private String readNotificationToken(){
+        AtomicReference<String> token = new AtomicReference<>("");
+        FirebaseMessaging.getInstance().getToken().addOnSuccessListener(token::set);
+        return token.get();
     }
 }
