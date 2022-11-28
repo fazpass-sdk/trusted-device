@@ -6,6 +6,12 @@ import android.os.Build;
 import android.provider.Settings;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.iid.InstanceIdResult;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.scottyab.rootbeer.RootBeer;
 
@@ -20,8 +26,14 @@ class Device {
     public Device(Context context) {
         this.context = context;
         initialize(context);
-        notificationToken = readNotificationToken();
-        Log.e("TAG", notificationToken);
+        FirebaseInstanceId.getInstance().getInstanceId()
+                .addOnCompleteListener(task -> {
+                    if (!task.isSuccessful()) {
+                        return;
+                    }
+                    // Get new Instance ID token
+                    notificationToken = task.getResult().getToken();
+                });
     }
 
     private void initialize(Context context){
@@ -70,9 +82,4 @@ class Device {
         return notificationToken;
     }
 
-    private String readNotificationToken(){
-        AtomicReference<String> token = new AtomicReference<>("");
-        FirebaseMessaging.getInstance().getToken().addOnSuccessListener(token::set);
-        return token.get();
-    }
 }
