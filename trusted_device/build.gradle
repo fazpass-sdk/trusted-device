@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    compileSdk 33
+    compileSdk 31
 
     defaultConfig {
         minSdk 24
-        targetSdk 33
+        targetSdk 32
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
         multiDexEnabled true
@@ -33,7 +33,7 @@ android {
 }
 
 def getVersionName = { ->
-    return "1.0.22" // Replace with version Name
+    return "1.0.23" // Replace with version Name
 }
 
 def getArtifactId = { ->
@@ -42,11 +42,11 @@ def getArtifactId = { ->
 
 publishing {
     publications {
-        release(MavenPublication) {
+        mavenAndroid(MavenPublication) {
             groupId = 'com.fazpass'
             artifactId = getArtifactId()
             version = getVersionName()
-            artifact("build/outputs/aar/${getArtifactId()}-release.aar")
+            artifact("$buildDir/outputs/aar/${getArtifactId()}-release.aar")
         }
     }
 }
