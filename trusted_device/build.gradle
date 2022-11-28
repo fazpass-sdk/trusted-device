@@ -41,7 +41,7 @@ def getArtifactId = { ->
 
 publishing {
     publications {
-        mavenAndroid(MavenPublication) {
+        release(MavenPublication) {
             groupId = 'com.fazpass'
             artifactId = getArtifactId()
             version = getVersionName()
