@@ -50,6 +50,10 @@ public class CheckUserResponse {
         public boolean isCrossApp() {
             return crossApp;
         }
+
+        public void setCrossApp(boolean crossApp) {
+            this.crossApp = crossApp;
+        }
     }
 
     public static class Current{

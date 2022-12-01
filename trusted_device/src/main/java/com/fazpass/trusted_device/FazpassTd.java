@@ -24,11 +24,20 @@ import java.util.UUID;
 import io.sentry.Sentry;
 
 public class FazpassTd extends Fazpass{
-    private final CheckUserResponse cUser;
+    private CheckUserResponse cUser;
     private FazpassTd(){
         throw new RuntimeException("Stub!");
     }
     private BroadcastReceiver messageReceiver;
+
+    protected FazpassTd(Context ctx, User user, String pin, TRUSTED_DEVICE td, CROSS_DEVICE cd, boolean isCrossApp){
+        if(isCrossApp){
+            autoEnroll(ctx, user, pin);
+        }else{
+            td_status = td;
+        }
+        cd_status = cd;
+    }
 
     protected FazpassTd(Context ctx, User user, String pin, TRUSTED_DEVICE td, CROSS_DEVICE cd, CheckUserResponse resp){
         if(resp.getApps().isCrossApp()){
