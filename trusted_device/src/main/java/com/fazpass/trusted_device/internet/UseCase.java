@@ -66,13 +66,13 @@ public interface UseCase {
     Observable<Response<OTPResponse>> requestOTPWithPhone(@Header("Authorization")String token, @Body OTPWithPhoneRequest body);
 
     @POST("v1/otp/request")
-    Observable<OtpResponse> requestOTPWithEmail(@Header("Authorization")String token, @Body OTPWithEmailRequest body);
+    Observable<Response<OtpResponse>> requestOTPWithEmail(@Header("Authorization")String token, @Body OTPWithEmailRequest body);
 
     @POST("v1/otp/generate")
     Observable<Response<OTPResponse>> generateOTPWithPhone(@Header("Authorization")String token, @Body OTPWithPhoneRequest body);
 
     @POST("v1/otp/generate")
-    Observable<OtpResponse> generateOTPWithEmail(@Header("Authorization")String token, @Body OTPWithEmailRequest body);
+    Observable<Response<OTPResponse>> generateOTPWithEmail(@Header("Authorization")String token, @Body OTPWithEmailRequest body);
 
     @POST("v1/otp/verify")
     Observable<Response> verifyOTP(@Header("Authorization")String token, @Body OTPVerificationRequest body);
