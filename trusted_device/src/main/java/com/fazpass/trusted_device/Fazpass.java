@@ -1,11 +1,17 @@
 package com.fazpass.trusted_device;
 
+import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.fazpass.trusted_device.internet.request.HEAuthRequest;
 import com.fazpass.trusted_device.internet.request.OTPVerificationRequest;
@@ -14,6 +20,8 @@ import com.fazpass.trusted_device.internet.request.OTPWithPhoneRequest;
 import com.fazpass.trusted_device.internet.request.RemoveDeviceRequest;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import io.sentry.Sentry;
 import io.sentry.android.core.SentryAndroid;
@@ -156,5 +164,33 @@ public abstract class Fazpass extends TrustedDevice{
         HEAuthRequest body = new HEAuthRequest(gateway, phone);
         getAuthPage(ctx, body).subscribe(response -> launchAuthPage(response.getData().getAuthPage())
                 .subscribe(response1 -> listener.onComplete(response1.getStatus()), listener::onError), listener::onError);
+    }
+
+    public static void requestPermission(Activity activity) {
+        ArrayList<String> requiredPermissions = new ArrayList<>(Arrays.asList(
+                Manifest.permission.RECEIVE_SMS,
+                Manifest.permission.READ_PHONE_STATE,
+                Manifest.permission.READ_CALL_LOG,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.INTERNET,
+                Manifest.permission.ACCESS_NETWORK_STATE,
+                Manifest.permission.READ_CONTACTS
+        ));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            requiredPermissions.add(Manifest.permission.READ_PHONE_NUMBERS);
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            requiredPermissions.add(Manifest.permission.USE_BIOMETRIC);
+        }
+
+        List<String> deniedPermissions = new ArrayList<>();
+        for (String permission : requiredPermissions) {
+            if (ContextCompat.checkSelfPermission(activity, permission) != PackageManager.PERMISSION_GRANTED) {
+                deniedPermissions.add(permission);
+            }
+        }
+
+        if (deniedPermissions.size() != 0)
+            ActivityCompat.requestPermissions(activity, deniedPermissions.toArray(new String[0]), 1);
     }
 }
