@@ -272,7 +272,7 @@ abstract class TrustedDevice extends BASE {
                                  If status return false that mean user not found in our data
                                  */
                                 if (!resp.getStatus()) {
-                                    subscriber.onNext(new FazpassTd(ctx, new User(), pin, TRUSTED_DEVICE.UNTRUSTED, CROSS_DEVICE.UNAVAILABLE, false));
+                                    subscriber.onNext(new FazpassTd(ctx, new User(), pin, TRUSTED_DEVICE.UNTRUSTED, CROSS_DEVICE.UNAVAILABLE));
                                     subscriber.onComplete();
                                 } else {
                                     /*

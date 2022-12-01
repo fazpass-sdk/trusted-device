@@ -30,12 +30,8 @@ public class FazpassTd extends Fazpass{
     }
     private BroadcastReceiver messageReceiver;
 
-    protected FazpassTd(Context ctx, User user, String pin, TRUSTED_DEVICE td, CROSS_DEVICE cd, boolean isCrossApp){
-        if(isCrossApp){
-            autoEnroll(ctx, user, pin);
-        }else{
-            td_status = td;
-        }
+    protected FazpassTd(Context ctx, User user, String pin, TRUSTED_DEVICE td, CROSS_DEVICE cd){
+        td_status = td;
         cd_status = cd;
     }
 
