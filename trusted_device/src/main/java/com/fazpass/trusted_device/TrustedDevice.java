@@ -514,7 +514,7 @@ abstract class TrustedDevice extends BASE {
         });
     }
 
-    protected static Observable<OtpResponse> requestOtpWithEmail(Context ctx, OTPWithEmailRequest body) {
+    protected static Observable<Response<OTPResponse>> requestOtpWithEmail(Context ctx, OTPWithEmailRequest body) {
         return Observable.create(subscriber -> {
             UseCase u = Roaming.start(Storage.readDataLocal(ctx, BASE_URL));
             u.requestOTPWithEmail("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body)
@@ -540,7 +540,7 @@ abstract class TrustedDevice extends BASE {
         });
     }
 
-    protected static Observable<OtpResponse> generateOtpWithEmail(Context ctx, OTPWithEmailRequest body) {
+    protected static Observable<Response<OTPResponse>> generateOtpWithEmail(Context ctx, OTPWithEmailRequest body) {
         return Observable.create(subscriber -> {
             UseCase u = Roaming.start(Storage.readDataLocal(ctx, BASE_URL));
             u.generateOTPWithEmail("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body)

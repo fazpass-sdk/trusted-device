@@ -1,6 +1,5 @@
 package com.fazpass.trusted_device.internet;
 
-import com.fazpass.trusted_device.OtpResponse;
 import com.fazpass.trusted_device.internet.request.CheckUserRequest;
 import com.fazpass.trusted_device.internet.request.ConfirmStatusRequest;
 import com.fazpass.trusted_device.internet.request.EnrollDeviceRequest;
@@ -66,7 +65,7 @@ public interface UseCase {
     Observable<Response<OTPResponse>> requestOTPWithPhone(@Header("Authorization")String token, @Body OTPWithPhoneRequest body);
 
     @POST("v1/otp/request")
-    Observable<Response<OtpResponse>> requestOTPWithEmail(@Header("Authorization")String token, @Body OTPWithEmailRequest body);
+    Observable<Response<OTPResponse>> requestOTPWithEmail(@Header("Authorization")String token, @Body OTPWithEmailRequest body);
 
     @POST("v1/otp/generate")
     Observable<Response<OTPResponse>> generateOTPWithPhone(@Header("Authorization")String token, @Body OTPWithPhoneRequest body);

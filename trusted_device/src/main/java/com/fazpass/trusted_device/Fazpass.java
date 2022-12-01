@@ -108,7 +108,9 @@ public abstract class Fazpass extends TrustedDevice{
     public static void requestOtpByEmail(Context ctx, String email, String gateway, Otp.Request listener){
         initializeChecking(ctx);
         OTPWithEmailRequest body = new OTPWithEmailRequest(email, gateway, new ArrayList<>());
-        requestOtpWithEmail(ctx, body).subscribe(listener::onComplete, listener::onError);
+        requestOtpWithEmail(ctx, body).subscribe(
+                resp->listener.onComplete(new OtpResponse(resp.getStatus(), resp.getMessage(), resp.getData().getId())),
+                listener::onError);
     }
 
     public static void generateOtpByPhone(Context ctx, String phone, String gateway, Otp.Request listener){
@@ -125,7 +127,9 @@ public abstract class Fazpass extends TrustedDevice{
     public static void generateOtpByEmail(Context ctx, String email, String gateway, Otp.Request listener){
         initializeChecking(ctx);
         OTPWithEmailRequest body = new OTPWithEmailRequest(email, gateway, new ArrayList<>());
-        generateOtpWithEmail(ctx, body).subscribe(listener::onComplete, listener::onError);
+        generateOtpWithEmail(ctx, body).subscribe(
+                resp->listener.onComplete(new OtpResponse(resp.getStatus(), resp.getMessage(), resp.getData().getId())),
+                listener::onError);
     }
 
     public static void validateOtp(Context ctx, String otpId, String otp,  Otp.Validate listener){
