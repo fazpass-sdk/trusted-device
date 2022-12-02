@@ -18,7 +18,6 @@ abstract class BASE {
     static final String USER_PIN = "user_pin";
     static final String USER_ID = "user_id";
     static final String DEVICE = "device";
-    static final String LOGO = "logo";
     static final String FAZPASS = "com.fazpass.sdk";
     static final String TAG = "fazpass";
     static final String LOCAL_MISSING = "LOCAL DATA IS MISSING";

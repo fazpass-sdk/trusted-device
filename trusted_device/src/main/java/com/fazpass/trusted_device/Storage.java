@@ -1,6 +1,11 @@
 package com.fazpass.trusted_device;
 
 import static com.fazpass.trusted_device.BASE.FAZPASS;
+import static com.fazpass.trusted_device.BASE.META;
+import static com.fazpass.trusted_device.BASE.PRIVATE_KEY;
+import static com.fazpass.trusted_device.BASE.PUBLIC_KEY;
+import static com.fazpass.trusted_device.BASE.USER_ID;
+import static com.fazpass.trusted_device.BASE.USER_PIN;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -42,7 +47,12 @@ class Storage {
 
     static void removeDataLocal(Context context){
         SharedPreferences sharedPref = context.getSharedPreferences(FAZPASS,Context.MODE_PRIVATE);
-        sharedPref.edit().clear().apply();
+        sharedPref.edit().remove(PRIVATE_KEY).apply();
+        sharedPref.edit().remove(META).apply();
+        sharedPref.edit().remove(PUBLIC_KEY).apply();
+        sharedPref.edit().remove(USER_ID).apply();
+        sharedPref.edit().remove(USER_PIN).apply();
+//        sharedPref.edit().clear().apply();
     }
 
     static String readDataLocal(Context context, String key){

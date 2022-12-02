@@ -125,7 +125,7 @@ abstract class TrustedDevice extends BASE {
 
     protected ValidateDeviceRequest collectDataValidate(Context ctx) {
         String userId = Storage.readDataLocal(ctx, USER_ID);
-        String meta = new FazpassKey().getMeta();
+        String meta =Storage.readDataLocal(ctx, META);
         String key = Storage.readDataLocal(ctx, PUBLIC_KEY);
         if (userId.equals("") || meta.equals("") || key.equals("")) {
             return null;
@@ -374,7 +374,6 @@ abstract class TrustedDevice extends BASE {
             public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
                 super.onAuthenticationSucceeded(result);
                 ValidateDeviceRequest body = collectDataValidate(ctx);
-                assert body != null;
                 if (body.getKey().equals("")) {
                     listener.onFailure(Error.localDataMissing());
                     return;
@@ -423,7 +422,6 @@ abstract class TrustedDevice extends BASE {
             BCrypt.Result result = BCrypt.verifyer().verify(pin.toCharArray(), cryptPin);
             if (result.verified) {
                 ValidateDeviceRequest body = collectDataValidate(ctx);
-                assert body != null;
                 if (body.getKey().equals("")) {
                     listener.onFailure(Error.localDataMissing());
                     return;
@@ -448,7 +446,7 @@ abstract class TrustedDevice extends BASE {
             }
         } catch (JSONException e) {
             Sentry.captureException(e);
-            e.printStackTrace();
+            listener.onFailure(e);
         }
     }
 

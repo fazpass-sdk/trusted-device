@@ -42,9 +42,10 @@ class FazpassKey {
             String keyStoreAlias = generateKeyAlias(pubKey);
             String password = BCrypt.withDefaults().hashToString(12, pubKey.toCharArray());
             Storage.storeDataLocal(context, USER_PIN, pin);
+            Storage.storeDataLocal(context, PUBLIC_KEY, pubKey);
             Storage.storeDataLocal(context, PRIVATE_KEY, password);
             meta = Crypto.encrypt(keyStoreAlias, password);
-            Storage.storeDataLocal(context, META, password);
+            Storage.storeDataLocal(context, META, meta);
         } catch (Exception e) {
             e.printStackTrace();
         }
