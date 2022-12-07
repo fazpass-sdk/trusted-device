@@ -1,12 +1,9 @@
 *.iml
-.gradle
+/android
+/android/.gradle
 /local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
+/.idea
+/android/.idea
 .DS_Store
 /build
 /captures
@@ -15,3 +12,4 @@
 local.properties
 .idea/deploymentTargetDropDown.xml
 /sample_app/release/
+/node_modules
