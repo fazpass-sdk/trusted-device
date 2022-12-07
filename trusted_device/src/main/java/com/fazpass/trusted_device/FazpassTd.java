@@ -30,7 +30,7 @@ public class FazpassTd extends Fazpass{
     }
     private BroadcastReceiver messageReceiver;
 
-    protected FazpassTd(Context ctx, User user, String pin, TRUSTED_DEVICE td, CROSS_DEVICE cd){
+    protected FazpassTd(TRUSTED_DEVICE td, CROSS_DEVICE cd){
         td_status = td;
         cd_status = cd;
     }
@@ -45,11 +45,15 @@ public class FazpassTd extends Fazpass{
         cUser = resp;
     }
 
+    protected void autoEnroll(Context ctx, User user, String pin){
+        enrollDeviceByPin(ctx, user, pin);
+        td_status = TRUSTED_DEVICE.TRUSTED;
+    }
+
     protected FazpassTd(Context context, User user, String pin, CROSS_DEVICE cd, CheckUserResponse resp){
         cUser = resp;
         FazpassKey.setMeta(resp.getApps().getCurrent().getMeta());
         cd_status = cd;
-        Device device = new Device(context);
         String password = Storage.readDataLocal(context, PRIVATE_KEY);
         try{
             String hashedInformation = resp.getApps().getCurrent().getMeta();
@@ -214,8 +218,5 @@ public class FazpassTd extends Fazpass{
         sendNotification(ctx, cUser.getApps().getOthers(), timeOut,userId,notificationId);
     }
 
-    protected void autoEnroll(Context ctx, User user, String pin){
-        enrollDeviceByPin(ctx, user, pin);
-        td_status = TRUSTED_DEVICE.TRUSTED;
-    }
+
 }

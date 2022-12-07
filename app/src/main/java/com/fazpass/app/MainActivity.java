@@ -14,19 +14,20 @@ import com.fazpass.trusted_device.User;
 import com.fazpass.trusted_device.ValidateStatus;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String MERCHANT_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZGVudGlmaWVyIjo0fQ.WEV3bCizw9U_hxRC6DxHOzZthuJXRE8ziI3b6bHUpEI";
+    private static final String MERCHANT_KEY =
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZGVudGlmaWVyIjozfQ.1ye0zSaJgWPB5_SUU7oSDHKAs4tKjz_5RVtDnvc-HoE";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         Fazpass.initialize(this, MERCHANT_KEY,MODE.STAGING);
-        Button a = findViewById(R.id.btnEnroll);
-        a.setOnClickListener(v->{
-            Fazpass.check(this, "koala@panda.com", "086811754000", "123456", new TrustedDeviceListener<FazpassTd>() {
+        Button enroll = findViewById(R.id.btnEnroll);
+        enroll.setOnClickListener(v->{
+            Fazpass.check(this, "panda@me.com", "085811755000", "123456", new TrustedDeviceListener<FazpassTd>() {
                 @Override
                 public void onSuccess(FazpassTd o) {
-                    o.enrollDeviceByPin(MainActivity.this,new User("koala@panda.com","085811754000","","",""),"123456");
+
                 }
 
                 @Override
@@ -36,15 +37,16 @@ public class MainActivity extends AppCompatActivity {
             });
         });
 
-        Button b = findViewById(R.id.btnValidate);
-        b.setOnClickListener(v->{
-            Fazpass.check(this, "koala@panda.com", "086811754000", "123456", new TrustedDeviceListener<FazpassTd>() {
+        Button validate = findViewById(R.id.btnValidate);
+        validate.setOnClickListener(v->{
+            Fazpass.check(this, "panda@me.com", "085811755000", "123456", new TrustedDeviceListener<FazpassTd>() {
                 @Override
                 public void onSuccess(FazpassTd o) {
+
                     o.validateUser(MainActivity.this, "123456", new TrustedDeviceListener<ValidateStatus>() {
                         @Override
                         public void onSuccess(ValidateStatus o) {
-                            o.getConfidenceRate().getConfidence();
+                            Log.e("APP", String.valueOf(o.getConfidenceRate().getConfidence()));
                         }
 
                         @Override

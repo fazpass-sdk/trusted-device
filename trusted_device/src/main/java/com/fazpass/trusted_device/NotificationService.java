@@ -64,11 +64,6 @@ public class NotificationService extends FirebaseMessagingService {
     @Override
     public void onNewToken(@NonNull String token) {
         super.onNewToken(token);
-        TrustedDevice.updateFcm(this, token).subscribe(s->{
-            Log.i("Fazpass", s.getMessage());
-        }, err->{
-            Log.e("Fazpass", err.getMessage());
-        });
     }
 
     public void showNotification(String device, String notificationId, String notificationToken){

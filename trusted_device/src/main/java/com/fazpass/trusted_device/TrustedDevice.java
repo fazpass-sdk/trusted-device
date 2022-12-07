@@ -272,7 +272,7 @@ abstract class TrustedDevice extends BASE {
                                  If status return false that mean user not found in our data
                                  */
                                 if (!resp.getStatus()) {
-                                    subscriber.onNext(new FazpassTd(ctx, new User(), pin, TRUSTED_DEVICE.UNTRUSTED, CROSS_DEVICE.UNAVAILABLE));
+                                    subscriber.onNext(new FazpassTd(TRUSTED_DEVICE.UNTRUSTED, CROSS_DEVICE.UNAVAILABLE));
                                     subscriber.onComplete();
                                 } else {
                                     /*
@@ -291,7 +291,8 @@ abstract class TrustedDevice extends BASE {
                                     /*
                                       It will checking status of trusted device for this user
                                     */
-                                    if (!resp.getData().getApps().getCurrent().getKey().equals("")) {
+
+                                    if (!resp.getData().getApps().getCurrent().getMeta().equals("")) {
                                         // If key in local was null, will automatically remove key in server
                                         if (key.equals("")) {
                                             removeDevice(ctx, new User(email, phone), pin, resp.getData().getUser().getId(), crossStatus, resp.getData()).subscribe(f -> {
@@ -320,12 +321,12 @@ abstract class TrustedDevice extends BASE {
     /**
      * Usage to remove device from server cause key on local is missing
      * @param userId - user ID from response
-     * @param finalCrossStatus - cross device status
+     * @param crossDeviceStatus - cross device status
      * @param resp - response from check user
      * @return FazpassTd
      * @see FazpassTd
      */
-    protected static Observable<FazpassTd> removeDevice(Context ctx, User user, String pin, String userId, CROSS_DEVICE finalCrossStatus, CheckUserResponse resp) {
+    protected static Observable<FazpassTd> removeDevice(Context ctx, User user, String pin, String userId, CROSS_DEVICE crossDeviceStatus, CheckUserResponse resp) {
         return Observable.create(subscriber -> {
             UseCase u = Roaming.start(Storage.readDataLocal(ctx, BASE_URL));
             Helper.sentryMessage("FORCE_REMOVE_DEVICE", collectDataRemove(ctx, userId));
@@ -333,7 +334,7 @@ abstract class TrustedDevice extends BASE {
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(s -> {
-                        subscriber.onNext(new FazpassTd(ctx, user, pin, TRUSTED_DEVICE.UNTRUSTED, finalCrossStatus, resp));
+                        subscriber.onNext(new FazpassTd(ctx, user, pin, TRUSTED_DEVICE.UNTRUSTED, crossDeviceStatus, resp));
                         subscriber.onComplete();
                     }, err -> {
 
