@@ -131,7 +131,6 @@ abstract class TrustedDevice extends BASE {
             return null;
         }
         Sim sim = new Sim(ctx);
-        Device device = new Device(ctx);
         GeoLocation geo = new GeoLocation(ctx);
         Contact contact = new Contact(ctx);
 
@@ -158,14 +157,12 @@ abstract class TrustedDevice extends BASE {
     }
 
     protected static RemoveDeviceRequest collectDataRemove(Context ctx, String userId) {
-        Device device = new Device(ctx);
         GeoLocation geo = new GeoLocation(ctx);
         RemoveDeviceRequest.Location l = new RemoveDeviceRequest.Location(geo.getLatitude(), geo.getLongitude());
         return new RemoveDeviceRequest(userId, ctx.getPackageName(), Device.name, l, geo.getTimezone());
     }
 
     protected LastActiveRequest collectDataLastActive(Context ctx, String userId) {
-        Device device = new Device(ctx);
         GeoLocation geo = new GeoLocation(ctx);
         LastActiveRequest.Location l = new LastActiveRequest.Location(geo.getLatitude(), geo.getLongitude());
         return new LastActiveRequest(userId, ctx.getPackageName(),

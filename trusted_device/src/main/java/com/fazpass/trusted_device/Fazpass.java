@@ -23,10 +23,42 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Observer;
 import io.sentry.Sentry;
 import io.sentry.android.core.SentryAndroid;
 
-public abstract class Fazpass extends TrustedDevice{
+public abstract class Fazpass extends TrustedDevice {
+
+    public static Observable<String> awaitConfidenceRate(Context context, User user) {
+        return new Observable<String>() {
+            @Override
+            protected void subscribeActual(@io.reactivex.rxjava3.annotations.NonNull Observer<? super String> observer) {
+                Fazpass.check(context, user.getEmail(), user.getPhone(), "1111", new TrustedDeviceListener<FazpassTd>() {
+                    @Override
+                    public void onSuccess(FazpassTd o) {
+                        o.validateUser(context, "1111", new TrustedDeviceListener<ValidateStatus>() {
+                            @Override
+                            public void onSuccess(ValidateStatus o) {
+                                observer.onNext(""+(o.getConfidenceRate().getConfidence()*100)+"%");
+                                observer.onComplete();
+                            }
+
+                            @Override
+                            public void onFailure(Throwable err) {
+                                observer.onError(err);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onFailure(Throwable err) {
+                        err.printStackTrace();
+                    }
+                });
+            }
+        };
+    }
 
     public static void initialize(Context context, String merchantToken, MODE mode){
         if (merchantToken == null || merchantToken.equals("")){
