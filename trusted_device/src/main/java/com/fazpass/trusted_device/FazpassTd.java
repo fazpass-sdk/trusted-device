@@ -24,7 +24,7 @@ import java.util.UUID;
 import io.sentry.Sentry;
 
 public class FazpassTd extends Fazpass{
-    private CheckUserResponse cUser;
+    private static CheckUserResponse cUser;
     private FazpassTd(){
         throw new RuntimeException("Stub!");
     }

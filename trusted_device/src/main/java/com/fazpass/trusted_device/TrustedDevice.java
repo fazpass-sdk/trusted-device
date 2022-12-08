@@ -347,7 +347,7 @@ abstract class TrustedDevice extends BASE {
                 .filter(app -> app.getApp().equals(ctx.getPackageName())).collect(Collectors.toList());
         List<NotificationRequest.Device> receiver = new ArrayList<>();
         for (CheckUserResponse.App device : devices) {
-            NotificationRequest.Device r = new NotificationRequest.Device(device.getApp(), Device.name);
+            NotificationRequest.Device r = new NotificationRequest.Device(device.getApp(), device.getDevice());
             receiver.add(r);
         }
         String notificationToken = Device.notificationToken;
