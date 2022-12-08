@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 
 import com.fazpass.trusted_device.CrossDeviceListener;
@@ -29,84 +30,95 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         Fazpass.initialize(this, MERCHANT_KEY,MODE.STAGING);
+
         Button enroll = findViewById(R.id.btnEnroll);
-        enroll.setOnClickListener(v->{
-            Fazpass.check(this, user.getEmail(), user.getPhone(), pin, new TrustedDeviceListener<FazpassTd>() {
-                @Override
-                public void onSuccess(FazpassTd o) {
-                    o.enrollDeviceByPin(MainActivity.this, user, pin, new TrustedDeviceListener<EnrollStatus>() {
-                        @Override
-                        public void onSuccess(EnrollStatus o) {
-                            Log.e("ENROLL", "Status:"+o.getStatus());
-                            Log.e("ENROLL", "Message:"+o.getMessage());
-                        }
-
-                        @Override
-                        public void onFailure(Throwable err) {}
-                    });
-                }
-
-                @Override
-                public void onFailure(Throwable err) {
-                    Log.e("ERR", err.getMessage());
-                }
-            });
-        });
+        enroll.setOnClickListener(this::onEnroll);
 
         Button validate = findViewById(R.id.btnValidate);
-        validate.setOnClickListener(v->{
-            Fazpass.check(this, user.getEmail(), user.getPhone(), pin, new TrustedDeviceListener<FazpassTd>() {
-                @Override
-                public void onSuccess(FazpassTd o) {
-                    o.validateUser(MainActivity.this, pin, new TrustedDeviceListener<ValidateStatus>() {
-                        @Override
-                        public void onSuccess(ValidateStatus o) {
-                            Log.e("VALIDATE", String.valueOf(o.getConfidenceRate().getConfidence()));
-                        }
-
-                        @Override
-                        public void onFailure(Throwable err) {
-
-                        }
-                    });
-                }
-
-                @Override
-                public void onFailure(Throwable err) {
-                    Log.e("ERR", err.getMessage());
-                }
-            });
-        });
+        validate.setOnClickListener(this::onValidateUser);
 
         Button crossDevice = findViewById(R.id.btnCrossDevice);
-        crossDevice.setOnClickListener(v->{
-            Fazpass.check(this, user.getEmail(), user.getPhone(), pin, new TrustedDeviceListener<FazpassTd>() {
-                @Override
-                public void onSuccess(FazpassTd o) {
-                    o.validateCrossDevice(MainActivity.this, cdTimeout, new CrossDeviceListener() {
-                        @Override
-                        public void onResponse(String device, boolean status) {
-                            Log.e("CROSS DEVICE", "Status:"+status);
-                            Log.e("CROSS DEVICE", "Device:"+device);
-                        }
-
-                        @Override
-                        public void onExpired() {
-                            Log.e("CROSS DEVICE", "Expired");
-                        }
-                    });
-                }
-
-                @Override
-                public void onFailure(Throwable err) {
-                    Log.e("ERR", err.getMessage());
-                }
-            });
-        });
+        crossDevice.setOnClickListener(this::onValidateCrossDevice);
 
         Button remove = findViewById(R.id.btnRemove);
-        remove.setOnClickListener(v->{
-            Fazpass.removeDevice(this);
+        remove.setOnClickListener(this::onRemove);
+    }
+
+    private void onEnroll(View v) {
+        Fazpass.check(this, user.getEmail(), user.getPhone(), pin, new TrustedDeviceListener<FazpassTd>() {
+            @Override
+            public void onSuccess(FazpassTd o) {
+                o.enrollDeviceByPin(MainActivity.this, user, pin, new TrustedDeviceListener<EnrollStatus>() {
+                    @Override
+                    public void onSuccess(EnrollStatus o) {
+                        Log.e("ENROLL", "Status:" + o.getStatus());
+                        Log.e("ENROLL", "Message:" + o.getMessage());
+                    }
+
+                    @Override
+                    public void onFailure(Throwable err) {
+                        Log.e("ERR", err.getMessage());
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Throwable err) {
+                Log.e("ERR", err.getMessage());
+            }
         });
+    }
+
+    private void onValidateUser(View v) {
+        Fazpass.check(this, user.getEmail(), user.getPhone(), pin, new TrustedDeviceListener<FazpassTd>() {
+            @Override
+            public void onSuccess(FazpassTd o) {
+                o.validateUser(MainActivity.this, pin, new TrustedDeviceListener<ValidateStatus>() {
+                    @Override
+                    public void onSuccess(ValidateStatus o) {
+                        Log.e("VALIDATE", String.valueOf(o.getConfidenceRate().getConfidence()));
+                    }
+
+                    @Override
+                    public void onFailure(Throwable err) {
+                        Log.e("ERR", err.getMessage());
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Throwable err) {
+                Log.e("ERR", err.getMessage());
+            }
+        });
+    }
+
+    private void onValidateCrossDevice(View v) {
+        Fazpass.check(this, user.getEmail(), user.getPhone(), pin, new TrustedDeviceListener<FazpassTd>() {
+            @Override
+            public void onSuccess(FazpassTd o) {
+                o.validateCrossDevice(MainActivity.this, cdTimeout, new CrossDeviceListener() {
+                    @Override
+                    public void onResponse(String device, boolean status) {
+                        Log.e("CROSS DEVICE", "Status:" + status);
+                        Log.e("CROSS DEVICE", "Device:" + device);
+                    }
+
+                    @Override
+                    public void onExpired() {
+                        Log.e("CROSS DEVICE", "Expired");
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Throwable err) {
+                Log.e("ERR", err.getMessage());
+            }
+        });
+    }
+
+    private void onRemove(View v) {
+        Fazpass.removeDevice(this);
     }
 }

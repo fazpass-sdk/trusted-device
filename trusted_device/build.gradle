@@ -39,7 +39,7 @@ android {
 }
 
 def getVersionName = { ->
-    return "0.0.6"
+    return "0.0.8"
 }
 
 def getArtifactId = { ->
