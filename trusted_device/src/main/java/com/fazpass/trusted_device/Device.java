@@ -34,13 +34,13 @@ class Device {
     }
 
     private void initialize(Context context){
-        Device.name = readMeta()+"-"+generateAppId(context);
+        Device.name = readMeta();
     }
 
-    @SuppressLint("HardwareIds")
+/*    @SuppressLint("HardwareIds")
     private String generateAppId(Context context){
         return Settings.Secure.getString(context.getApplicationContext().getContentResolver(), Settings.Secure.ANDROID_ID);
-    }
+    }*/
 
     private String readMeta(){
         return ""+ Build.BRAND+","+Build.MODEL+","+Build.VERSION.SDK_INT;
