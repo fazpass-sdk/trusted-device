@@ -39,7 +39,7 @@ android {
 }
 
 def getVersionName = { ->
-    return "0.0.8"
+    return "0.2.0"
 }
 
 def getArtifactId = { ->
@@ -76,8 +76,8 @@ dependencies {
     implementation 'at.favre.lib:bcrypt:0.9.0'
     implementation 'io.sentry:sentry-android:6.4.1'
     implementation 'org.apache.commons:commons-lang3:3.12.0'
-    implementation 'io.reactivex.rxjava3:rxjava:3.1.5'
-    implementation 'io.reactivex.rxjava3:rxandroid:3.0.0'
+    api 'io.reactivex.rxjava3:rxjava:3.1.5'
+    api 'io.reactivex.rxjava3:rxandroid:3.0.0'
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
     implementation 'com.squareup.retrofit2:adapter-rxjava3:2.9.0'

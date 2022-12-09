@@ -121,4 +121,10 @@ public class MainActivity extends AppCompatActivity {
     private void onRemove(View v) {
         Fazpass.removeDevice(this);
     }
+
+    private void check(View v){
+        Fazpass.check(this, "","","").subscribe(ftd->{
+
+        });
+    }
 }

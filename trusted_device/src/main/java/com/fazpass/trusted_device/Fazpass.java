@@ -13,16 +13,24 @@ import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.fazpass.trusted_device.internet.Roaming;
+import com.fazpass.trusted_device.internet.UseCase;
+import com.fazpass.trusted_device.internet.request.CheckUserRequest;
 import com.fazpass.trusted_device.internet.request.HEAuthRequest;
 import com.fazpass.trusted_device.internet.request.OTPVerificationRequest;
 import com.fazpass.trusted_device.internet.request.OTPWithEmailRequest;
 import com.fazpass.trusted_device.internet.request.OTPWithPhoneRequest;
 import com.fazpass.trusted_device.internet.request.RemoveDeviceRequest;
+import com.fazpass.trusted_device.internet.response.CheckUserResponse;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import io.sentry.Sentry;
 import io.sentry.android.core.SentryAndroid;
 
@@ -97,9 +105,73 @@ public abstract class Fazpass extends TrustedDevice{
      * @param listener-
      */
 
+
+
     public static void check(Context ctx,@NonNull String email, @NonNull String phone,@NonNull String pin, TrustedDeviceListener<FazpassTd> listener) {
         initializeChecking(ctx);
         checking(ctx, email,phone,pin).subscribe(listener::onSuccess, listener::onFailure);
+    }
+
+    public static Observable<FazpassTd> check(Context ctx, String email, String phone, String pin){
+        if (email.equals("") && phone.equals("")) {
+            throw new NullPointerException("email or phone cannot be empty");
+        }
+        String packageName = ctx.getPackageName();
+        GeoLocation location = new GeoLocation(ctx);
+        CheckUserRequest.Location locationDetail = new CheckUserRequest.Location(location.getLatitude(), location.getLongitude());
+        CheckUserRequest body = new CheckUserRequest(email, phone, packageName, Device.name, location.getTimezone(), locationDetail);
+        Helper.sentryMessage("CHECK", body);
+        return Observable.create(subscriber->{
+            UseCase u = Roaming.start(Storage.readDataLocal(ctx, BASE_URL));
+            u.startService("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(resp->{
+                        String key = Storage.readDataLocal(ctx, PRIVATE_KEY);
+                        /*
+                        If status return false that mean user not found in our data
+                        */
+                        if (!resp.getStatus()) {
+                            subscriber.onNext(new FazpassTd(TRUSTED_DEVICE.UNTRUSTED, CROSS_DEVICE.UNAVAILABLE));
+                            subscriber.onComplete();
+                        } else {
+                             /*
+                              It will checking status of cross device for this user
+                             */
+                            Storage.storeDataLocal(ctx, USER_ID, resp.getData().getUser().getId());
+                            CROSS_DEVICE crossStatus = CROSS_DEVICE.UNAVAILABLE;
+                            try {
+                                List<CheckUserResponse.App> devices = resp.getData().getApps().getOthers().stream()
+                                        .filter(app -> app.getApp().equals(ctx.getPackageName())).collect(Collectors.toList());
+                                if (devices.size() >= 1) {
+                                    crossStatus = CROSS_DEVICE.AVAILABLE;
+                                }
+                            } catch (Exception ignored) {
+                            }
+                            /*
+                            It will checking status of trusted device for this user
+                             */
+                            if (!resp.getData().getApps().getCurrent().getMeta().equals("")) {
+                                // If key in local was null, will automatically remove key in server
+                                if (key.equals("")) {
+                                    removeDevice(ctx, new User(email, phone), pin, resp.getData().getUser().getId(), crossStatus, resp.getData()).subscribe(f -> {
+                                        subscriber.onNext(f);
+                                        subscriber.onComplete();
+                                    }, subscriber::onError);
+                                } else {
+                                    subscriber.onNext(new FazpassTd(ctx, new User(email, phone), pin, crossStatus, resp.getData()));
+                                    subscriber.onComplete();
+                                }
+                            } else {
+                                subscriber.onNext(new FazpassTd(ctx, new User(email, phone), pin, TRUSTED_DEVICE.UNTRUSTED, crossStatus, resp.getData()));
+                                subscriber.onComplete();
+                            }
+                        }
+                    },err->{
+                        subscriber.onError(err);
+                        Sentry.captureException(err);
+                    });
+        });
     }
 
     public static void requestOtpByPhone(Context ctx, String phone, String gateway, Otp.Request listener){
