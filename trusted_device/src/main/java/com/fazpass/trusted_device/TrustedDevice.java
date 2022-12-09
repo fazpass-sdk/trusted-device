@@ -624,7 +624,9 @@ abstract class TrustedDevice extends BASE {
                     String stateStr = intent.getExtras().getString(TelephonyManager.EXTRA_STATE);
                     if (stateStr.equals(TelephonyManager.EXTRA_STATE_RINGING)) {
                         String number = intent.getExtras().getString(TelephonyManager.EXTRA_INCOMING_NUMBER);
-                        listener.onIncomingMessage(number.substring(number.length() - otpLength));
+                        if(number != null){
+                            listener.onIncomingMessage(number.substring(number.length() - otpLength));
+                        }
                         if (smsReceiver != null) context.unregisterReceiver(smsReceiver);
                         context.unregisterReceiver(this);
                     }
