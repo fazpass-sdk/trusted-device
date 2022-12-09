@@ -29,6 +29,12 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        Fazpass.testKoala().subscribe(s->{
+
+        },err->{
+
+        });
+
         Fazpass.initialize(this, MERCHANT_KEY,MODE.STAGING);
 
         Button enroll = findViewById(R.id.btnEnroll);

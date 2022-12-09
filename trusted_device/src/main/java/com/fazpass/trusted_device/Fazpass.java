@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import io.reactivex.rxjava3.core.Observable;
 import io.sentry.Sentry;
 import io.sentry.android.core.SentryAndroid;
 
@@ -89,6 +90,11 @@ public abstract class Fazpass extends TrustedDevice{
         }, Sentry::captureException);
     }
 
+    public static Observable<String> testKoala(){
+        return Observable.create(s->{
+
+        });
+    }
     /**
      * It will check status of trusted device status & cross device status and returning new object of FazpassTd
      * @param email-
