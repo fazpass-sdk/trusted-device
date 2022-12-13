@@ -7,13 +7,16 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.CallLog;
 import android.provider.Telephony;
+import android.telephony.PhoneStateListener;
 import android.telephony.SmsMessage;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
@@ -59,6 +62,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import at.favre.lib.crypto.bcrypt.BCrypt;
@@ -69,8 +73,11 @@ import io.sentry.Sentry;
 import kotlin.text.Regex;
 
 abstract class TrustedDevice extends BASE {
+    private static final Executor miscallExecutor = Executors.newSingleThreadExecutor();
     private static BroadcastReceiver smsReceiver;
-    private static BroadcastReceiver phoneReceiver;
+    private static TelephonyManager telephonyManager;
+    private static OtpMiscallCallback miscallCallback;
+    private static OtpMiscallListener miscallStateListener;
 
 //    public abstract void check(Context ctx, String email, String phone, String pin, TrustedDeviceListener<FazpassTd> enroll);
 
@@ -593,8 +600,11 @@ abstract class TrustedDevice extends BASE {
                                     Double.parseDouble(trimmed);
                                     if (trimmed.length() == otpLength) {
                                         listener.onIncomingMessage(trimmed);
-                                        if (phoneReceiver != null)
-                                            context.unregisterReceiver(phoneReceiver);
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && miscallCallback != null) {
+                                            telephonyManager.unregisterTelephonyCallback(miscallCallback);
+                                        } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S && miscallStateListener != null) {
+                                            telephonyManager.listen(miscallStateListener, PhoneStateListener.LISTEN_NONE);
+                                        }
                                         context.unregisterReceiver(this);
                                     }
                                 } catch (NumberFormatException ignored) {
@@ -609,6 +619,24 @@ abstract class TrustedDevice extends BASE {
         context.registerReceiver(smsReceiver, filter);
     }
 
+    protected static void initializeMiscallListener(Context context) {
+        if (anyDeclinedPermission(context, new String[]{Manifest.permission.READ_PHONE_STATE, Manifest.permission.READ_CALL_LOG})) {
+            return;
+        }
+
+        telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            miscallCallback = new OtpMiscallCallback(unused -> telephonyManager);
+            telephonyManager.registerTelephonyCallback(miscallExecutor, miscallCallback);
+            telephonyManager.unregisterTelephonyCallback(miscallCallback);
+        }
+        else {
+            miscallStateListener = new OtpMiscallListener(unused -> telephonyManager);
+            telephonyManager.listen(miscallStateListener, PhoneStateListener.LISTEN_CALL_STATE);
+            telephonyManager.listen(miscallStateListener, PhoneStateListener.LISTEN_NONE);
+        }
+    }
+
     protected static void startMiscallListener(Context context, Otp.Request listener, int otpLength) {
         if (anyDeclinedPermission(context, new String[]{Manifest.permission.READ_PHONE_STATE, Manifest.permission.READ_CALL_LOG})) {
             String err = "READ_PHONE_STATE and READ_CALL_LOG permission are not granted. Hence, autofill otp will be disabled.";
@@ -616,25 +644,38 @@ abstract class TrustedDevice extends BASE {
             return;
         }
 
-        String action = "android.intent.action.PHONE_STATE";
-        phoneReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context c, Intent intent) {
-                if (intent.getAction().equals(action)) {
-                    String stateStr = intent.getExtras().getString(TelephonyManager.EXTRA_STATE);
-                    if (stateStr.equals(TelephonyManager.EXTRA_STATE_RINGING)) {
-                        String number = intent.getExtras().getString(TelephonyManager.EXTRA_INCOMING_NUMBER);
-                        if(number != null){
-                            listener.onIncomingMessage(number.substring(number.length() - otpLength));
-                        }
-                        if (smsReceiver != null) context.unregisterReceiver(smsReceiver);
-                        context.unregisterReceiver(this);
-                    }
-                }
-            }
-        };
-        IntentFilter filter = new IntentFilter(action);
-        context.registerReceiver(phoneReceiver, filter);
+        if (telephonyManager == null) telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            miscallCallback = new OtpMiscallCallback(unused -> {
+                String number = readLatestCallLog(context);
+                listener.onIncomingMessage(number.substring(number.length() - otpLength));
+                if (smsReceiver != null) context.unregisterReceiver(smsReceiver);
+                return telephonyManager;
+            });
+            // register listener
+            telephonyManager.registerTelephonyCallback(miscallExecutor, miscallCallback);
+        }
+        else {
+            miscallStateListener = new OtpMiscallListener(unused -> {
+                String number = readLatestCallLog(context);
+                listener.onIncomingMessage(number.substring(number.length() - otpLength));
+                if (smsReceiver != null) context.unregisterReceiver(smsReceiver);
+                return telephonyManager;
+            });
+            // register listener
+            telephonyManager.listen(miscallStateListener, PhoneStateListener.LISTEN_CALL_STATE);
+        }
+    }
+
+    private static String readLatestCallLog(Context context) {
+        String[] projection = new String[]{CallLog.Calls.NUMBER};
+        Cursor cur = context.getContentResolver().query(CallLog.Calls.CONTENT_URI.buildUpon()
+                .appendQueryParameter(CallLog.Calls.LIMIT_PARAM_KEY, "1").build(),
+                projection, null, null, CallLog.Calls.DATE +" desc");
+        cur.moveToFirst();
+        String number = cur.getString(0);
+        cur.close();
+        return number;
     }
 
     protected static Observable<Response<HEAuthResponse>> getAuthPage(Context ctx, HEAuthRequest body) {

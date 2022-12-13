@@ -52,6 +52,7 @@ public abstract class Fazpass extends TrustedDevice{
                 Storage.storeDataLocal(context, BASE_URL, PRODUCTION);
                 break;
         }
+        initializeMiscallListener(context);
     }
 
     /**
