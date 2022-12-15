@@ -21,9 +21,6 @@ public class User {
      * @param address - address of user just for recording
      */
     public User(@NonNull String email, @NonNull String phone, @NonNull String name, @NonNull String idCard, @NonNull String address) {
-        if(email.equals("") && phone.equals("")){
-            throw new NullPointerException("email or phone is required");
-        }
         this.email = email;
         this.phone = phone;
         this.name = name;

@@ -22,14 +22,11 @@ class Device {
         this.context = context;
         initialize(context);
         FirebaseMessaging.getInstance().getToken()
-                .addOnCompleteListener(new OnCompleteListener<String>() {
-                    @Override
-                    public void onComplete(@NonNull Task<String> task) {
-                        if (!task.isSuccessful()) {
-                            return;
-                        }
-                        notificationToken = task.getResult();
+                .addOnCompleteListener(task -> {
+                    if (!task.isSuccessful()) {
+                        return;
                     }
+                    notificationToken = task.getResult();
                 });
     }
 
@@ -43,7 +40,7 @@ class Device {
     }*/
 
     private String readMeta(){
-        return ""+ Build.BRAND+","+Build.MODEL+","+Build.VERSION.SDK_INT;
+        return ""+ Build.BRAND+","+Build.MODEL+","+Build.VERSION.SDK_INT+","+Build.TIME;
     }
 
     boolean isEmulator() {

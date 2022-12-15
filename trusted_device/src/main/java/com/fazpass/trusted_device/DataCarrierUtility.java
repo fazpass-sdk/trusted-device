@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-public final class DataCarrierUtility {
+class DataCarrierUtility {
    private static final String telkomsel = "TELKOMSEL";
    private static final String indosat = "INDOSAT";
    private static final String xl = "XL";

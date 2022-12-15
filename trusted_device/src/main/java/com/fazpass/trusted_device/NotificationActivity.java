@@ -2,7 +2,6 @@ package com.fazpass.trusted_device;
 
 import static com.fazpass.trusted_device.BASE.USER_PIN;
 
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -52,7 +51,6 @@ public class NotificationActivity extends FragmentActivity {
         int requestId = intent.getIntExtra(Notification.NOTIFICATION_REQ_ID, 0);
         String device = intent.getStringExtra(Notification.NOTIFICATION_DEVICE);
         String notificationToken = intent.getStringExtra(Notification.NOTIFICATION_TOKEN);
-        //TODO Please use image from user.
         ImageView logoImg = findViewById(R.id.notification_logo);
         TextView appNameTxt = findViewById(R.id.notification_app_name);
         TextView messageTxt = findViewById(R.id.notification_message);
@@ -80,36 +78,21 @@ public class NotificationActivity extends FragmentActivity {
 
                 BCrypt.Result result = BCrypt.verifyer().verify(inputtedPin.toCharArray(), cryptPin);
                 if (result.verified) {
-                    onConfirmation("com.fazpass.trusted_device.CONFIRM_STATUS", notificationId, requestId, device, notificationToken);
+                    Notification.onConfirmation(this,"com.fazpass.trusted_device.CONFIRM_STATUS", notificationId, requestId, device, notificationToken);
+                    finish();
                 } else {
                     Toast.makeText(this, "PIN doesn't match.", Toast.LENGTH_SHORT).show();
                 }
             }
             else {
-                onConfirmation("com.fazpass.trusted_device.CONFIRM_STATUS", notificationId, requestId, device, notificationToken);
+                Notification.onConfirmation(this,"com.fazpass.trusted_device.CONFIRM_STATUS", notificationId, requestId, device, notificationToken);
+                finish();
             }
         });
-        noBtn.setOnClickListener(view ->
-                onConfirmation("com.fazpass.trusted_device.DECLINE_STATUS", notificationId, requestId, device, notificationToken));
-    }
-
-    private void onConfirmation(String action, String notificationId, int requestId, String device, String notificationToken) {
-        Intent intent = new Intent(this, NotificationBroadcastReceiver.class);
-        intent.setAction(action);
-        intent.putExtra(Notification.NOTIFICATION_ID, notificationId);
-        intent.putExtra(Notification.NOTIFICATION_REQ_ID, requestId);
-        intent.putExtra(Notification.NOTIFICATION_DEVICE, device);
-        intent.putExtra(Notification.NOTIFICATION_TOKEN, notificationToken);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(
-                this, requestId, intent,
-                PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        try {
-            pendingIntent.send();
-        } catch (PendingIntent.CanceledException e) {
-            e.printStackTrace();
-        }
-
-        finish();
+        noBtn.setOnClickListener(view -> {
+            Notification.onConfirmation(this,"com.fazpass.trusted_device.DECLINE_STATUS", notificationId, requestId, device, notificationToken);
+            finish();
+        });
     }
 
     private Drawable getLogoDrawable(ApplicationInfo applicationInfo) {

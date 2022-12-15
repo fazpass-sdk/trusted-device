@@ -21,6 +21,10 @@ import org.json.JSONObject;
 
 import java.util.UUID;
 
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import io.sentry.Sentry;
 
 public class FazpassTd extends Fazpass{
@@ -62,7 +66,9 @@ public class FazpassTd extends Fazpass{
             if(json.getString(PACKAGE_NAME).equals(context.getPackageName())&& json.getString(DEVICE).equals(Device.name)){
                 td_status = TRUSTED_DEVICE.TRUSTED;
                 User.setIsUseFinger(resp.getApps().getCurrent().isUse_fingerprint());
-                updateLastActive(context, Storage.readDataLocal(context, USER_ID));
+                updateLastActive(context, Storage.readDataLocal(context, USER_ID))
+                        .subscribeOn(Schedulers.newThread())
+                        .subscribe();
             }else{
                 if(resp.getApps().isCrossApp()){
                    autoEnroll(context, user, pin);
@@ -91,13 +97,21 @@ public class FazpassTd extends Fazpass{
         if(pin.equals("")){
             throw new NullPointerException("PIN cannot be null or empty");
         }
-        EnrollDeviceRequest body = collectDataEnroll(ctx, user,pin, false);
-        Helper.sentryMessage("ENROLL_DEVICE_BY_PIN", body);
-        enroll(ctx, body).subscribe(resp-> enroll.onSuccess(new EnrollStatus(resp.getStatus(),resp.getMessage())),
-                err->{
-                    enroll.onFailure(err);
-                    Sentry.captureException(err);
-                });
+        Observable
+                .create(subscriber -> {
+                    EnrollDeviceRequest body = collectDataEnroll(ctx, user, pin, false);
+                    //Helper.sentryMessage("ENROLL_DEVICE_BY_PIN", body);
+                    subscriber.onNext(body);
+                    subscriber.onComplete();
+                }).subscribeOn(Schedulers.newThread())
+                .switchMap(body -> enroll(ctx, (EnrollDeviceRequest) body))
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        resp -> enroll.onSuccess(new EnrollStatus(resp.getStatus(), resp.getMessage())),
+                        err -> {
+                            enroll.onFailure(err);
+                            Sentry.captureException(err);
+                        });
     }
 
     /**
@@ -110,10 +124,16 @@ public class FazpassTd extends Fazpass{
         if(pin.equals("")){
             throw new NullPointerException("PIN cannot be null or empty");
         }
-        EnrollDeviceRequest body = collectDataEnroll(ctx, user,pin, false);
-        Helper.sentryMessage("ENROLL_DEVICE_BY_PIN", body);
-        enroll(ctx, body).subscribe(resp-> {},
-                Sentry::captureException);
+        Observable
+                .create(subscriber -> {
+                    EnrollDeviceRequest body = collectDataEnroll(ctx, user,pin, false);
+                    //Helper.sentryMessage("ENROLL_DEVICE_BY_PIN", body);
+                    subscriber.onNext(body);
+                    subscriber.onComplete();
+                }).subscribeOn(Schedulers.newThread())
+                .switchMap(body -> enroll(ctx, (EnrollDeviceRequest) body))
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(resp->{}, Sentry::captureException);
     }
 
     /**
@@ -137,9 +157,16 @@ public class FazpassTd extends Fazpass{
             @Override
             public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
                 super.onAuthenticationSucceeded(result);
-                EnrollDeviceRequest body = collectDataEnroll(ctx, user, pin, true);
-                Helper.sentryMessage("ENROLL_DEVICE_BY_FINGER", body);
-                enroll(ctx, body).subscribe(resp-> {}, Sentry::captureException);
+                Observable
+                        .create(subscriber -> {
+                            EnrollDeviceRequest body = collectDataEnroll(ctx, user, pin, true);
+                            //Helper.sentryMessage("ENROLL_DEVICE_BY_FINGER", body);
+                            subscriber.onNext(body);
+                            subscriber.onComplete();
+                        }).subscribeOn(Schedulers.newThread())
+                        .switchMap(body -> enroll(ctx, (EnrollDeviceRequest) body))
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(resp-> {}, Sentry::captureException);
             }
 
             @Override
@@ -171,16 +198,26 @@ public class FazpassTd extends Fazpass{
      * @author Anvarisy
      */
     public void removeDevice(Context ctx, TrustedDeviceListener<RemoveStatus> listener) {
-        String userId = Storage.readDataLocal(ctx,USER_ID);
-        RemoveDeviceRequest body = collectDataRemove(ctx, userId);
-        Helper.sentryMessage("REMOVE_DEVICE", body);
-        remove(ctx, body).subscribe(resp->{
-            listener.onSuccess(new RemoveStatus(resp.getStatus(),resp.getMessage()));
-            Storage.removeDataLocal(ctx);
-        }, err->{
-            listener.onFailure(err);
-            Sentry.captureException(err);
-        });
+        Observable
+                .create(emitter -> {
+                    String userId = Storage.readDataLocal(ctx,USER_ID);
+                    RemoveDeviceRequest body = collectDataRemove(ctx, userId);
+                    //Helper.sentryMessage("REMOVE_DEVICE", body);
+                    emitter.onNext(body);
+                    emitter.onComplete();
+                }).subscribeOn(Schedulers.newThread())
+                .switchMap(data -> remove(ctx, (RemoveDeviceRequest) data))
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        resp-> {
+                            listener.onSuccess(new RemoveStatus(resp.getStatus(),resp.getMessage()));
+                            Storage.removeDataLocal(ctx);
+                        },
+                        err-> {
+                            listener.onFailure(err);
+                            Sentry.captureException(err);
+                        })
+                ;
     }
 
     /**

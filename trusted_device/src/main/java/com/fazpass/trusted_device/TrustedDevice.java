@@ -2,6 +2,7 @@ package com.fazpass.trusted_device;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -26,6 +27,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.biometric.BiometricManager;
 import androidx.biometric.BiometricPrompt;
 import androidx.core.content.ContextCompat;
@@ -138,7 +140,6 @@ abstract class TrustedDevice extends BASE {
             return null;
         }
         Sim sim = new Sim(ctx);
-        Device device = new Device(ctx);
         GeoLocation geo = new GeoLocation(ctx);
         Contact contact = new Contact(ctx);
 
@@ -165,164 +166,107 @@ abstract class TrustedDevice extends BASE {
     }
 
     protected static RemoveDeviceRequest collectDataRemove(Context ctx, String userId) {
-        Device device = new Device(ctx);
         GeoLocation geo = new GeoLocation(ctx);
         RemoveDeviceRequest.Location l = new RemoveDeviceRequest.Location(geo.getLatitude(), geo.getLongitude());
         return new RemoveDeviceRequest(userId, ctx.getPackageName(), Device.name, l, geo.getTimezone());
     }
 
     protected LastActiveRequest collectDataLastActive(Context ctx, String userId) {
-        Device device = new Device(ctx);
         GeoLocation geo = new GeoLocation(ctx);
         LastActiveRequest.Location l = new LastActiveRequest.Location(geo.getLatitude(), geo.getLongitude());
         return new LastActiveRequest(userId, ctx.getPackageName(),
                 Device.name, geo.getTimezone(), l);
     }
 
-    protected Observable<Response> updateLastActive(Context ctx, String userId) {
-        LastActiveRequest body = collectDataLastActive(ctx, userId);
+    protected static Observable<UseCase> createUseCase(Context ctx) {
         return Observable.create(subscriber -> {
             UseCase u = Roaming.start(Storage.readDataLocal(ctx, BASE_URL));
-            u.updateLastActive("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body)
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(resp -> {
-                        subscriber.onNext(resp);
-                        subscriber.onComplete();
-                    }, subscriber::onError);
+            subscriber.onNext(u);
+            subscriber.onComplete();
+        });
+    }
+
+    protected Observable<Response> updateLastActive(Context ctx, String userId) {
+        return createUseCase(ctx).switchMap(useCase -> {
+            LastActiveRequest body = collectDataLastActive(ctx, userId);
+            return useCase.updateLastActive("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body);
         });
     }
 
     protected Observable<Response<EnrollDeviceResponse>> enroll(Context ctx, EnrollDeviceRequest body) {
-        return Observable.create(subscriber -> {
-            UseCase u = Roaming.start(Storage.readDataLocal(ctx, BASE_URL));
-            u.enrollDevice("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body)
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(resp -> {
-                        subscriber.onNext(resp);
-                        subscriber.onComplete();
-                    }, subscriber::onError);
-        });
+        return createUseCase(ctx)
+                .switchMap(useCase -> useCase.enrollDevice("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body));
     }
 
     protected Observable<Response<NotificationResponse>> requestNotification(Context ctx, NotificationRequest body) {
-        return Observable.create(subscriber -> {
-            UseCase u = Roaming.start(Storage.readDataLocal(ctx, BASE_URL));
-            u.sendNotification("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body)
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(resp -> {
-                        subscriber.onNext(resp);
-                        subscriber.onComplete();
-                    }, subscriber::onError);
-        });
+        return createUseCase(ctx).switchMap(useCase ->
+            useCase.sendNotification("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body));
     }
 
     protected Observable<Response<ValidateDeviceResponse>> validate(Context ctx, ValidateDeviceRequest body) {
-        return Observable.create(subscriber -> {
-            UseCase u = Roaming.start(Storage.readDataLocal(ctx, BASE_URL));
-            u.validateDevice("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body)
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(resp -> {
-                        subscriber.onNext(resp);
-                        subscriber.onComplete();
-                    }, subscriber::onError);
-        });
+        return createUseCase(ctx).switchMap(useCase ->
+                useCase.validateDevice("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body));
     }
 
     protected static Observable<Response<RemoveDeviceResponse>> remove(Context ctx, RemoveDeviceRequest body) {
-        return Observable.create(subscriber -> {
-            UseCase u = Roaming.start(Storage.readDataLocal(ctx, BASE_URL));
-            u.removeDevice("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body)
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(resp -> {
-                        subscriber.onNext(resp);
-                        subscriber.onComplete();
-                    }, subscriber::onError);
-        });
+        return createUseCase(ctx)
+                .switchMap(useCase -> useCase.removeDevice("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body));
     }
 
     protected Observable<Response> updateNotification(Context ctx, UpdateNotificationRequest body) {
-        return Observable.create(subscriber -> {
-            UseCase u = Roaming.start(Storage.readDataLocal(ctx, BASE_URL));
-            u.updateNotification("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body)
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(resp -> {
-                        subscriber.onNext(resp);
-                        subscriber.onComplete();
-                    }, subscriber::onError);
-        });
+        return createUseCase(ctx).switchMap(useCase ->
+                useCase.updateNotification("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body));
     }
 
-    protected static Observable<FazpassTd> checking(Context ctx, String email, String phone, String pin) {
-        if (email.equals("") && phone.equals("")) {
-            throw new NullPointerException("email or phone cannot be empty");
-        }
-        String packageName = ctx.getPackageName();
-        GeoLocation location = new GeoLocation(ctx);
-        CheckUserRequest.Location locationDetail = new CheckUserRequest.Location(location.getLatitude(), location.getLongitude());
-        CheckUserRequest body = new CheckUserRequest(email, phone, packageName, Device.name, location.getTimezone(), locationDetail);
-        Helper.sentryMessage("CHECK", body);
-        return Observable.create(subscriber -> {
-            UseCase u = Roaming.start(Storage.readDataLocal(ctx, BASE_URL));
-            u.startService("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body)
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(
-                            resp -> {
-                                String key = Storage.readDataLocal(ctx, PRIVATE_KEY);
+    protected static Observable<FazpassTd> checking(Context ctx, CheckUserRequest body, String pin) {
+        return createUseCase(ctx)
+                .switchMap(useCase -> useCase.startService("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body))
+                .switchMap(resp -> Observable.create(subscriber -> {
+                    String key = Storage.readDataLocal(ctx, PRIVATE_KEY);
                                 /*
                                  If status return false that mean user not found in our data
                                  */
-                                if (!resp.getStatus()) {
-                                    subscriber.onNext(new FazpassTd(TRUSTED_DEVICE.UNTRUSTED, CROSS_DEVICE.UNAVAILABLE));
-                                    subscriber.onComplete();
-                                } else {
+                    if (!resp.getStatus()) {
+                        subscriber.onNext(new FazpassTd(TRUSTED_DEVICE.UNTRUSTED, CROSS_DEVICE.UNAVAILABLE));
+                        subscriber.onComplete();
+                    } else {
                                     /*
                                       It will checking status of cross device for this user
                                      */
-                                    Storage.storeDataLocal(ctx, USER_ID, resp.getData().getUser().getId());
-                                    CROSS_DEVICE crossStatus = CROSS_DEVICE.UNAVAILABLE;
-                                    try {
-                                        List<CheckUserResponse.App> devices = resp.getData().getApps().getOthers().stream()
-                                                .filter(app -> app.getApp().equals(ctx.getPackageName())).collect(Collectors.toList());
-                                        if (devices.size() >= 1) {
-                                            crossStatus = CROSS_DEVICE.AVAILABLE;
-                                        }
-                                    } catch (Exception ignored) {
-                                    }
+                        Storage.storeDataLocal(ctx, USER_ID, resp.getData().getUser().getId());
+                        CROSS_DEVICE crossStatus = CROSS_DEVICE.UNAVAILABLE;
+                        try {
+                            List<CheckUserResponse.App> devices = resp.getData().getApps().getOthers().stream()
+                                    .filter(app -> app.getApp().equals(ctx.getPackageName())).collect(Collectors.toList());
+                            if (devices.size() >= 1) {
+                                crossStatus = CROSS_DEVICE.AVAILABLE;
+                            }
+                        } catch (Exception ignored) {
+                        }
                                     /*
                                       It will checking status of trusted device for this user
                                     */
 
-                                    if (!resp.getData().getApps().getCurrent().getMeta().equals("")) {
-                                        // If key in local was null, will automatically remove key in server
-                                        if (key.equals("")) {
-                                            removeDevice(ctx, new User(email, phone), pin, resp.getData().getUser().getId(), crossStatus, resp.getData()).subscribe(f -> {
-                                                subscriber.onNext(f);
-                                                subscriber.onComplete();
-                                            }, subscriber::onError);
-                                        } else {
-                                            subscriber.onNext(new FazpassTd(ctx, new User(email, phone), pin, crossStatus, resp.getData()));
+                        if (!resp.getData().getApps().getCurrent().getMeta().equals("")) {
+                            // If key in local was null, will automatically remove key in server
+                            if (key.equals("")) {
+                                removeDevice(ctx, new User(body.getEmail(), body.getPhone()), pin, resp.getData().getUser().getId(), crossStatus, resp.getData())
+                                        .subscribe(f -> {
+                                            subscriber.onNext(f);
                                             subscriber.onComplete();
-                                        }
-                                    } else {
-                                        subscriber.onNext(new FazpassTd(ctx, new User(email, phone), pin, TRUSTED_DEVICE.UNTRUSTED, crossStatus, resp.getData()));
-                                        subscriber.onComplete();
-                                    }
-
-                                }
-
-                            }, err -> {
-                                subscriber.onError(err);
-                                Sentry.captureException(err);
+                                        }, subscriber::onError);
+                            } else {
+                                subscriber.onNext(new FazpassTd(ctx, new User(body.getEmail(), body.getPhone()), pin, crossStatus, resp.getData()));
+                                subscriber.onComplete();
                             }
-                    );
-        });
+                        } else {
+                            subscriber.onNext(new FazpassTd(ctx, new User(body.getEmail(), body.getPhone()), pin, TRUSTED_DEVICE.UNTRUSTED, crossStatus, resp.getData()));
+                            subscriber.onComplete();
+                        }
+
+                    }
+
+                }));
     }
 
     /**
@@ -334,38 +278,32 @@ abstract class TrustedDevice extends BASE {
      * @see FazpassTd
      */
     protected static Observable<FazpassTd> removeDevice(Context ctx, User user, String pin, String userId, CROSS_DEVICE crossDeviceStatus, CheckUserResponse resp) {
-        return Observable.create(subscriber -> {
-            UseCase u = Roaming.start(Storage.readDataLocal(ctx, BASE_URL));
-            Helper.sentryMessage("FORCE_REMOVE_DEVICE", collectDataRemove(ctx, userId));
-            u.removeDevice("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), collectDataRemove(ctx, userId))
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(s -> {
-                        subscriber.onNext(new FazpassTd(ctx, user, pin, TRUSTED_DEVICE.UNTRUSTED, crossDeviceStatus, resp));
-                        subscriber.onComplete();
-                    }, err -> {
-
-                    });
-        });
+        //Helper.sentryMessage("FORCE_REMOVE_DEVICE", collectDataRemove(ctx, userId));
+        return createUseCase(ctx)
+                .switchMap(useCase ->
+                        useCase.removeDevice("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), collectDataRemove(ctx, userId)))
+                .map(data -> new FazpassTd(ctx, user, pin, TRUSTED_DEVICE.UNTRUSTED, crossDeviceStatus, resp));
     }
 
     protected void sendNotification(Context ctx, List<CheckUserResponse.App> d, long timeOut, String userId, String notificationId) {
-        List<CheckUserResponse.App> devices = d.stream()
-                .filter(app -> app.getApp().equals(ctx.getPackageName())).collect(Collectors.toList());
-        List<NotificationRequest.Device> receiver = new ArrayList<>();
-        for (CheckUserResponse.App device : devices) {
-            NotificationRequest.Device r = new NotificationRequest.Device(device.getApp(), device.getDevice());
-            receiver.add(r);
-        }
-        String notificationToken = Device.notificationToken;
-        String thisDevice = Device.name;
-        NotificationRequest body = new NotificationRequest(timeOut, notificationToken, notificationId, userId, receiver, thisDevice);
-        Helper.sentryMessage("SEND_NOTIFICATION", body);
-        requestNotification(ctx, body).subscribe(s -> {
-
-        }, err -> {
-            Log.e("SEND NOTIFICATION", err.getMessage());
-        });
+        Observable
+                .create(subscriber -> {
+                    List<CheckUserResponse.App> devices = d.stream()
+                            .filter(app -> app.getApp().equals(ctx.getPackageName())).collect(Collectors.toList());
+                    List<NotificationRequest.Device> receiver = new ArrayList<>();
+                    for (CheckUserResponse.App device : devices) {
+                        NotificationRequest.Device r = new NotificationRequest.Device(device.getApp(), device.getDevice());
+                        receiver.add(r);
+                    }
+                    String notificationToken = Device.notificationToken;
+                    String thisDevice = Device.name;
+                    NotificationRequest body = new NotificationRequest(timeOut, notificationToken, notificationId, userId, receiver, thisDevice);
+                    //Helper.sentryMessage("SEND_NOTIFICATION", body);
+                    subscriber.onNext(body);
+                    subscriber.onComplete();
+                }).subscribeOn(Schedulers.newThread())
+                .switchMap(body -> requestNotification(ctx, (NotificationRequest) body))
+                .subscribe(s -> {}, err -> Log.e("SEND NOTIFICATION", err.getMessage()));
     }
 
     protected void validateUserByFinger(Context ctx, TrustedDeviceListener<ValidateStatus> listener) {
@@ -381,26 +319,31 @@ abstract class TrustedDevice extends BASE {
             @Override
             public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
                 super.onAuthenticationSucceeded(result);
-                ValidateDeviceRequest body = collectDataValidate(ctx);
-                if (body.getKey().equals("")) {
-                    listener.onFailure(Error.localDataMissing());
-                    return;
-                }
-                Helper.sentryMessage("VALIDATE_BY_FINGER", body);
-                validate(ctx, body).subscribe(resp -> {
-                    ValidateStatus.Confidence cfd = new ValidateStatus.Confidence(
-                            resp.getData().getMeta(),
-                            resp.getData().getKey(),
-                            resp.getData().getSim(),
-                            resp.getData().getContact(),
-                            resp.getData().getContact()
-                    );
-                    ValidateStatus status = new ValidateStatus(resp.getStatus(), cfd);
-                    listener.onSuccess(status);
-                }, err -> {
-                    Log.e(TAG, err.getMessage());
-                    listener.onFailure(err);
-                });
+                //Helper.sentryMessage("VALIDATE_BY_FINGER", body);
+                Observable
+                        .create(subscriber -> {
+                            ValidateDeviceRequest body = collectDataValidate(ctx);
+                            if (body.getKey().equals("")) {
+                                throw Error.localDataMissing();
+                            }
+                            subscriber.onNext(body);
+                            subscriber.onComplete();
+                        }).subscribeOn(Schedulers.newThread())
+                        .switchMap(body -> validate(ctx, (ValidateDeviceRequest) body))
+                        .switchMap(resp -> Observable.create(subscriber -> {
+                            ValidateStatus.Confidence cfd = new ValidateStatus.Confidence(
+                                    resp.getData().getMeta(),
+                                    resp.getData().getKey(),
+                                    resp.getData().getSim(),
+                                    resp.getData().getContact(),
+                                    resp.getData().getLocation()
+                            );
+                            ValidateStatus status = new ValidateStatus(resp.getStatus(), cfd);
+                            subscriber.onNext(status);
+                            subscriber.onComplete();
+                        }))
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(status -> listener.onSuccess((ValidateStatus) status), listener::onFailure);
             }
 
             @Override
@@ -414,28 +357,40 @@ abstract class TrustedDevice extends BASE {
     }
 
     protected void validateUserByPin(Context ctx, String pin, TrustedDeviceListener<ValidateStatus> listener) {
-        if (pin.equals("")) {
-            throw new NullPointerException("PIN cannot be null or empty");
-        }
-        String meta = new FazpassKey().getMeta();
-        String key = Storage.readDataLocal(ctx, PRIVATE_KEY);
-        if (meta.equals("") || key.equals("")) {
-            listener.onFailure(Error.localDataMissing());
-            return;
-        }
-        String rawData = Crypto.decrypt(meta, key);
-        try {
-            JSONObject json = new JSONObject(rawData);
-            String cryptPin = json.getString(USER_PIN);
-            BCrypt.Result result = BCrypt.verifyer().verify(pin.toCharArray(), cryptPin);
-            if (result.verified) {
-                ValidateDeviceRequest body = collectDataValidate(ctx);
-                if (body.getKey().equals("")) {
-                    listener.onFailure(Error.localDataMissing());
-                    return;
-                }
-                Helper.sentryMessage("VALIDATE_BY_PIN", body);
-                validate(ctx, body).subscribe(resp -> {
+        Observable
+                .create(subscriber -> {
+                    if (pin.equals("")) {
+                        throw new NullPointerException("PIN cannot be null or empty");
+                    }
+                    String meta = new FazpassKey().getMeta();
+                    String key = Storage.readDataLocal(ctx, PRIVATE_KEY);
+                    if (meta.equals("") || key.equals("")) {
+                        throw Error.localDataMissing();
+                    }
+                    String rawData = Crypto.decrypt(meta, key);
+                    try {
+                        JSONObject json = new JSONObject(rawData);
+                        String cryptPin = json.getString(USER_PIN);
+                        BCrypt.Result result = BCrypt.verifyer().verify(pin.toCharArray(), cryptPin);
+                        if (result.verified) {
+                            ValidateDeviceRequest body = collectDataValidate(ctx);
+                            if (body.getKey().equals("")) {
+                                throw Error.localDataMissing();
+                            }
+                            //Helper.sentryMessage("VALIDATE_BY_PIN", body);
+                            subscriber.onNext(body);
+                            subscriber.onComplete();
+
+                        } else {
+                            throw Error.pinNotMatch();
+                        }
+                    } catch (JSONException e) {
+                        Sentry.captureException(e);
+                        throw e;
+                    }
+                }).subscribeOn(Schedulers.newThread())
+                .switchMap(body -> validate(ctx, (ValidateDeviceRequest) body))
+                .switchMap(resp -> Observable.create(subscriber -> {
                     ValidateStatus.Confidence cfd = new ValidateStatus.Confidence(
                             resp.getData().getMeta(),
                             resp.getData().getKey(),
@@ -444,31 +399,23 @@ abstract class TrustedDevice extends BASE {
                             resp.getData().getLocation()
                     );
                     ValidateStatus status = new ValidateStatus(resp.getStatus(), cfd);
-                    listener.onSuccess(status);
-                }, err -> {
-                    Log.e(TAG, err.getMessage());
-                    listener.onFailure(err);
-                });
-            } else {
-                listener.onFailure(Error.pinNotMatch());
-            }
-        } catch (JSONException e) {
-            Sentry.captureException(e);
-            listener.onFailure(e);
-        }
+                    subscriber.onNext(status);
+                    subscriber.onComplete();
+                }))
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(status -> listener.onSuccess((ValidateStatus) status), listener::onFailure);
     }
 
     protected void notificationExpired(Context ctx, String userId, String notificationId) {
         UpdateNotificationRequest body = new UpdateNotificationRequest(notificationId, userId);
-        Helper.sentryMessage("SEND_NOTIFICATION", body);
-        updateNotification(ctx, body).subscribe(s -> {
-
-        }, err -> {
-            Log.e("SEND NOTIFICATION", err.getMessage());
-        });
+        //Helper.sentryMessage("SEND_NOTIFICATION", body);
+        updateNotification(ctx, body)
+                .subscribeOn(Schedulers.newThread())
+                .subscribe(s -> {}, err -> Log.e("SEND NOTIFICATION", err.getMessage()));
     }
 
-    protected static void launchedFromNotification(Context context, @Nullable Bundle extras) {
+    public static void launchedFromNotification(Activity activity, @Nullable Bundle extras, boolean requirePin, @Nullable Notification.DialogBuilder customDialogBuilder) {
+        Notification.IS_REQUIRE_PIN = requirePin;
         if (extras != null) {
             String app = extras.getString("app");
             String status = extras.getString("status");
@@ -476,42 +423,44 @@ abstract class TrustedDevice extends BASE {
             String notificationToken = extras.getString("notification_token");
             String notificationId = extras.getString("uuid_notif");
 
-            if (Objects.equals(app, context.getPackageName())) {
+            if (Objects.equals(app, activity.getPackageName())) {
                 if (Objects.equals(status, "request")) {
-                    Intent dialogIntent = NotificationActivity
-                            .buildIntent(context, notificationId, notificationToken, device, -1);
-                    context.startActivity(dialogIntent);
+                    if (customDialogBuilder != null) {
+                        AlertDialog alertDialog = customDialogBuilder
+                                .build(notificationId, notificationToken, device, -1);
+                        alertDialog.show();
+                        activity.finish();
+                    } else {
+                        Intent dialogIntent = NotificationActivity
+                                .buildIntent(activity, notificationId, notificationToken, device, -1);
+                        activity.startActivity(dialogIntent);
+                        activity.finish();
+                    }
                 }
-            } else {
-                Log.e("intent extras", "NULL");
             }
         }
     }
 
     static Observable<Response> updateFcm(Context ctx, String token) {
-        return Observable.create(subscriber -> {
-            String meta = Storage.readDataLocal(ctx, META);
-            String userId = Storage.readDataLocal(ctx, USER_ID);
-            String packageName = ctx.getPackageName();
-            String device = Device.name;
-            UseCase u = Roaming.start(Storage.readDataLocal(ctx, BASE_URL));
-            UpdateFcmRequest body = new UpdateFcmRequest(userId, packageName, device, token, meta);
-            u.updateFcm("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body)
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(s -> {
-                        subscriber.onNext(s);
-                        subscriber.onComplete();
-                    }, subscriber::onError);
-            ;
-        });
+        return Observable
+                .create(subscriber -> {
+                    String meta = Storage.readDataLocal(ctx, META);
+                    String userId = Storage.readDataLocal(ctx, USER_ID);
+                    String packageName = ctx.getPackageName();
+                    String device = Device.name;
+                    UpdateFcmRequest body = new UpdateFcmRequest(userId, packageName, device, token, meta);
+                    subscriber.onNext(body);
+                    subscriber.onComplete();
+                })
+                .switchMap(body -> createUseCase(ctx).switchMap(useCase ->
+                        useCase.updateFcm("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), (UpdateFcmRequest) body)));
     }
 
     protected static Observable<Response<OTPResponse>> requestOtpWithPhone(Context ctx, OTPWithPhoneRequest body) {
         return Observable.create(subscriber -> {
             UseCase u = Roaming.start(Storage.readDataLocal(ctx, BASE_URL));
             u.requestOTPWithPhone("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body)
-                    .subscribeOn(Schedulers.io())
+                    .subscribeOn(Schedulers.newThread())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(resp -> {
                         subscriber.onNext(resp);
@@ -521,23 +470,15 @@ abstract class TrustedDevice extends BASE {
     }
 
     protected static Observable<Response<OTPResponse>> requestOtpWithEmail(Context ctx, OTPWithEmailRequest body) {
-        return Observable.create(subscriber -> {
-            UseCase u = Roaming.start(Storage.readDataLocal(ctx, BASE_URL));
-            u.requestOTPWithEmail("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body)
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(resp -> {
-                        subscriber.onNext(resp);
-                        subscriber.onComplete();
-                    }, subscriber::onError);
-        });
+        return createUseCase(ctx)
+                .switchMap(useCase -> useCase.requestOTPWithEmail("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body));
     }
 
     protected static Observable<Response<OTPResponse>> generateOtpWithPhone(Context ctx, OTPWithPhoneRequest body) {
         return Observable.create(subscriber -> {
             UseCase u = Roaming.start(Storage.readDataLocal(ctx, BASE_URL));
             u.generateOTPWithPhone("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body)
-                    .subscribeOn(Schedulers.io())
+                    .subscribeOn(Schedulers.newThread())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(resp -> {
                         subscriber.onNext(resp);
@@ -547,29 +488,13 @@ abstract class TrustedDevice extends BASE {
     }
 
     protected static Observable<Response<OTPResponse>> generateOtpWithEmail(Context ctx, OTPWithEmailRequest body) {
-        return Observable.create(subscriber -> {
-            UseCase u = Roaming.start(Storage.readDataLocal(ctx, BASE_URL));
-            u.generateOTPWithEmail("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body)
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(resp -> {
-                        subscriber.onNext(resp);
-                        subscriber.onComplete();
-                    }, subscriber::onError);
-        });
+        return createUseCase(ctx)
+                .switchMap(useCase -> useCase.generateOTPWithEmail("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body));
     }
 
     protected static Observable<Response> verifyOtp(Context ctx, OTPVerificationRequest body) {
-        return Observable.create(subscriber -> {
-            UseCase u = Roaming.start(Storage.readDataLocal(ctx, BASE_URL));
-            u.verifyOTP("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body)
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(resp -> {
-                        subscriber.onNext(resp);
-                        subscriber.onComplete();
-                    }, subscriber::onError);
-        });
+        return createUseCase(ctx)
+                .switchMap(useCase -> useCase.verifyOTP("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body));
     }
 
     protected static void startSMSListener(Context context, Otp.Request listener, int otpLength) {
@@ -679,31 +604,19 @@ abstract class TrustedDevice extends BASE {
     }
 
     protected static Observable<Response<HEAuthResponse>> getAuthPage(Context ctx, HEAuthRequest body) {
-        return Observable.create(subscriber -> {
-            UseCase u = Roaming.start(Storage.readDataLocal(ctx, BASE_URL));
-            u.HEAuth("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body)
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(resp -> {
-                        subscriber.onNext(resp);
-                        subscriber.onComplete();
-                    }, subscriber::onError);
-        });
+        return createUseCase(ctx).switchMap(useCase ->
+                useCase.HEAuth("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body));
     }
 
     protected static Observable<Response> launchAuthPage(String url) {
         return Observable.create(subscriber -> {
             Uri uri = Uri.parse(url);
-            UseCase u = Roaming.start(uri.getScheme() + "://" + uri.getHost() + "/");
             Map<String, String> queries = new ArrayMap<>();
             uri.getQueryParameterNames().forEach(name -> queries.put(name, uri.getQueryParameter(name)));
+
+            UseCase u = Roaming.start(uri.getScheme() + "://" + uri.getHost() + "/");
             u.HERedirectAuth(uri.getPath().replace("/", ""), queries)
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(resp -> {
-                        subscriber.onNext(resp);
-                        subscriber.onComplete();
-                    }, subscriber::onError);
+                    .subscribe(subscriber::onNext, subscriber::onError);
         });
     }
 

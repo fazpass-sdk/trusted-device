@@ -44,7 +44,7 @@ public class NotificationBroadcastReceiver extends BroadcastReceiver {
             );
             UseCase u = Roaming.start(Storage.readDataLocal(ctx,BASE_URL));
             u.confirmStatus("Bearer "+Storage.readDataLocal(ctx,MERCHANT_TOKEN), body)
-                    .subscribeOn(Schedulers.io())
+                    .subscribeOn(Schedulers.newThread())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(
                             resp-> Toast.makeText(ctx, resp.getMessage(), Toast.LENGTH_SHORT).show(),
