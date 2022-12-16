@@ -114,6 +114,25 @@ public abstract class Fazpass extends TrustedDevice{
                 .subscribe(listener::onSuccess, listener::onFailure);
     }
 
+    public static void check(Context ctx, String email, String phone, TrustedDeviceListener<FazpassTd> listener){
+        initializeChecking(ctx);
+        Observable.create(emitter->{
+            if (email.equals("") && phone.equals("")) {
+                throw new NullPointerException("email or phone cannot be empty");
+            }
+            String packageName = ctx.getPackageName();
+            GeoLocation location = new GeoLocation(ctx);
+            CheckUserRequest.Location locationDetail = new CheckUserRequest.Location(location.getLatitude(), location.getLongitude());
+            CheckUserRequest body = new CheckUserRequest(email, phone, packageName, Device.name, location.getTimezone(), locationDetail);
+            //Helper.sentryMessage("CHECK", body);
+            emitter.onNext(body);
+            emitter.onComplete();
+        }).subscribeOn(Schedulers.newThread())
+                .switchMap(body->checkingNoPin(ctx, (CheckUserRequest) body))
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(listener::onSuccess, listener::onFailure);
+    }
+
     public static void requestOtpByPhone(Context ctx, String phone, String gateway, Otp.Request listener){
         initializeChecking(ctx);
         OTPWithPhoneRequest body = new OTPWithPhoneRequest(phone, gateway, new ArrayList<>());

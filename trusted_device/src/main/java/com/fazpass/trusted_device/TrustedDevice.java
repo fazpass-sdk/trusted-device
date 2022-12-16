@@ -269,6 +269,14 @@ abstract class TrustedDevice extends BASE {
                 }));
     }
 
+    protected static Observable<FazpassTd> checkingNoPin(Context ctx, CheckUserRequest body){
+        return createUseCase(ctx)
+                .switchMap(useCase -> useCase.startService("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body))
+                .switchMap(resp-> Observable.create(subscriber->{
+
+                }));
+
+    }
     /**
      * Usage to remove device from server cause key on local is missing
      * @param userId - user ID from response

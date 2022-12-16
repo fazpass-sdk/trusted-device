@@ -124,46 +124,48 @@ The result, your app can't validate phone number that is not inside that phone.
    });
 ```
 ### Trusted Device
-#### Check User & Device
-Trusted device required to call method check before call other method.
+First of all you need to call this method in the main class of your application
 ```java
-   Fazpass.check(this, "EMAIL", "PHONE", "PIN", new TrustedDeviceListener<FazpassTd>() {
+Fazpass.initialize(this, MERCHANT_KEY,MODE.STAGING);
+```
+you can get merchant key from email when you registered as our client.
+#### General Flow (Check & Enroll)
+![alt text](https://firebasestorage.googleapis.com/v0/b/anvarisy-tech.appspot.com/o/TD%20General%20Flow.drawio.png?alt=media&token=d3b59ce0-c326-496c-867b-b0561b595677)
+as you can see, trusted device need to always call check method that will return trusted status from that device.<br>
+After status already trusted you can directly call method enroll. In our system enroll will update the newest information from that device & user.<br>
+NB: never call enroll method if result of check is untrusted
+
+##### Implementation
+```java
+   Fazpass.check(Context, "EMAIL", "PHONE" new TrustedDeviceListener<FazpassTd>() {
         @Override
         public void onSuccess(FazpassTd o) {
             if(o.td_status.equals(TRUSTED_DEVICE.TRUSTED)){
+                 o.enrollDeviceByPin(MainActivity.this, user, pin, new TrustedDeviceListener<EnrollStatus>() {
+                    @Override
+                    public void onSuccess() {
+                        // Trusted device success
+                    }
+
+                    @Override
+                    public void onFailure(Throwable err) {
+                        //TODO handle error
+                    }
+                });
                 // You can pass
             }
         }
 
         @Override
         public void onFailure(Throwable err) {
-
+            
         }
    });
 ```
-#### Enroll New Device
-It will register new device and new user, You can also call this method if user forgot PIN or reinstall your app.
-```java
-   Fazpass.check(this, "EMAIL", "PHONE", "PIN", new TrustedDeviceListener<FazpassTd>() {
-        @Override
-        public void onSuccess(FazpassTd o) {
-            if(o.td_status.equals(TRUSTED_DEVICE.UNTRUSTED)){
-                User user = new User("EMAIL","PHONE","NAME","ID_CARD", "ADDRESS");
-                o.enrollDeviceByPin(MainActivity.this, user,"PIN");
-            }
-        }
-
-        @Override
-        public void onFailure(Throwable err) {
-
-        }
-   });
-```
-We also have method enroll device by finger, if you prefer to use finger authentication.
 #### Validate  User & Device
 It will calculating how confidence that user and that device with your app.
 ```java
-   Fazpass.check(this, "EMAIL", "PHONE", "PIN", new TrustedDeviceListener<FazpassTd>() {
+   Fazpass.check(this, "EMAIL", "PHONE", new TrustedDeviceListener<FazpassTd>() {
         @Override
         public void onSuccess(FazpassTd o) {
             o.validateUser(MainActivity.this, "PIN", new TrustedDeviceListener<ValidateStatus>() {
@@ -187,11 +189,12 @@ It will calculating how confidence that user and that device with your app.
         }
    });
 ```
-If you use transaction inside your app, we recommended to use this method before transaction begin.
+NB: If you use transaction inside your app, we recommended to use this method before transaction begin.
 #### Cross Device Validation
-You can use this method when your client already registered with one phone or email, and trying to login with that email or phone in another device
+![alt text](https://firebasestorage.googleapis.com/v0/b/anvarisy-tech.appspot.com/o/TD%20Cross%20Device%20Flow.drawio.png?alt=media&token=6cc7f01a-d33a-4ec3-b6fb-674ba818ff7f)
+You can use this method when your client already registered with one phone number or email in one device, and trying to login with that email or phone in another device
 ```java
-   Fazpass.check(this, "EMAIL", "PHONE", "PIN", new TrustedDeviceListener<FazpassTd>() {
+   Fazpass.check(this, "EMAIL", "PHONE", new TrustedDeviceListener<FazpassTd>() {
         @Override
         public void onSuccess(FazpassTd o) {
             if(o.cd_status.equals(CROSS_DEVICE.AVAILABLE)){
@@ -216,15 +219,29 @@ You can use this method when your client already registered with one phone or em
         }
    });
 ```
-If COUNTDOWN has finish and no response from all device, that request will become expired.<br>
 NB: For android 10 and higher make sure you add this line in your main activity launcher
 ```java
-Fazpass.launchedFromNotificationRequirePin(this, getIntent());
+Fazpass.launchedFromNotification(activity, intent, isRequirePin, @Nullable customDialogBuilder);
 ```
-It will show you dialog confirmation that required user to input PIN, before they can click button YES.
+It will show you dialog confirmation that required user to input PIN, before they can click button YES. <br>
+![alt text](https://firebasestorage.googleapis.com/v0/b/anvarisy-tech.appspot.com/o/default.png?alt=media&token=d1081877-77fa-42b3-b1a5-f5ed8a75f6ee) <br>
+This is your default view of your dialog. <br>
+![alt text](https://firebasestorage.googleapis.com/v0/b/anvarisy-tech.appspot.com/o/custom.png?alt=media&token=03f12926-7184-4733-8225-2f3e65ea0a6d) <br>
+Or you can also create your own dialog that will be used for your application
 
 #### Remove Device
-It will remove that device and user, so when that user try to login again, they need to enroll again.
+It will remove that device and user.
 ```java
-Fazpass.removeDevice(this);
+Fazpass.removeDevice(Context, "PIN", new TrustedDeviceListener<RemoveStatus>{
+    @Override
+    public void onSuccess() {
+        
+    }
+    
+    @Override
+    public void onError(Throwable err) {
+
+    }
+    
+});
 ```
