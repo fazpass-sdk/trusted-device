@@ -130,7 +130,7 @@ Fazpass.initialize(this, MERCHANT_KEY,MODE.STAGING);
 ```
 you can get merchant key from email when you registered as our client.
 #### General Flow (Check & Enroll)
-![alt text](https://firebasestorage.googleapis.com/v0/b/anvarisy-tech.appspot.com/o/TD%20General%20Flow.drawio.png?alt=media&token=d3b59ce0-c326-496c-867b-b0561b595677)
+![alt text](https://firebasestorage.googleapis.com/v0/b/anvarisy-tech.appspot.com/o/TD%20General%20Flow.drawio.png?alt=media&token=d3b59ce0-c326-496c-867b-b0561b595677) <br>
 as you can see, trusted device need to always call check method that will return trusted status from that device.<br>
 After status already trusted you can directly call method enroll. In our system enroll will update the newest information from that device & user.<br>
 NB: never call enroll method if result of check is untrusted
@@ -191,7 +191,7 @@ It will calculating how confidence that user and that device with your app.
 ```
 NB: If you use transaction inside your app, we recommended to use this method before transaction begin.
 #### Cross Device Validation
-![alt text](https://firebasestorage.googleapis.com/v0/b/anvarisy-tech.appspot.com/o/TD%20Cross%20Device%20Flow.drawio.png?alt=media&token=6cc7f01a-d33a-4ec3-b6fb-674ba818ff7f)
+![alt text](https://firebasestorage.googleapis.com/v0/b/anvarisy-tech.appspot.com/o/TD%20Cross%20Device%20Flow.drawio.png?alt=media&token=6cc7f01a-d33a-4ec3-b6fb-674ba818ff7f) <br>
 You can use this method when your client already registered with one phone number or email in one device, and trying to login with that email or phone in another device
 ```java
    Fazpass.check(this, "EMAIL", "PHONE", new TrustedDeviceListener<FazpassTd>() {
