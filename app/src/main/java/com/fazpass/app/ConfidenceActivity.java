@@ -24,14 +24,13 @@ public class ConfidenceActivity extends AppCompatActivity {
 
         TextView confidenceTxt = findViewById(R.id.confidence_text);
         confidenceTxt.setText("Loading...");
-
-        Fazpass.check(this, user.getEmail(), user.getPhone(), pin, new TrustedDeviceListener<FazpassTd>() {
+        Fazpass.check(this, user.getEmail(), user.getPhone(), new TrustedDeviceListener<FazpassTd>() {
             @Override
             public void onSuccess(FazpassTd o) {
                 o.validateUser(ConfidenceActivity.this, pin, new TrustedDeviceListener<ValidateStatus>() {
                     @Override
                     public void onSuccess(ValidateStatus o) {
-                        String rate = String.valueOf(o.getConfidenceRate().getConfidence()*100);
+                        String rate = String.valueOf(o.getConfidenceRate().getSummary()*100);
                         confidenceTxt.setText(rate);
                     }
 

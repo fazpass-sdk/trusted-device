@@ -152,7 +152,6 @@ NB: never call enroll method if result of check is untrusted
                         //TODO handle error
                     }
                 });
-                // You can pass
             }
         }
 

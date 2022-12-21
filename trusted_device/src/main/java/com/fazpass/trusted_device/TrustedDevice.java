@@ -48,6 +48,7 @@ import com.fazpass.trusted_device.internet.request.RemoveDeviceRequest;
 import com.fazpass.trusted_device.internet.request.UpdateFcmRequest;
 import com.fazpass.trusted_device.internet.request.UpdateNotificationRequest;
 import com.fazpass.trusted_device.internet.request.ValidateDeviceRequest;
+import com.fazpass.trusted_device.internet.request.ValidatePinRequest;
 import com.fazpass.trusted_device.internet.response.CheckUserResponse;
 import com.fazpass.trusted_device.internet.response.EnrollDeviceResponse;
 import com.fazpass.trusted_device.internet.response.HEAuthResponse;
@@ -105,7 +106,7 @@ abstract class TrustedDevice extends BASE {
     protected EnrollDeviceRequest collectDataEnroll(Context ctx, User user, String pin, boolean isUseFinger) {
         Sim sim = new Sim(ctx);
         Connection c = new Connection(ctx);
-        FazpassKey key = new FazpassKey(ctx, user, pin);
+        FazpassKey key = new FazpassKey(ctx, user);
         GeoLocation geo = new GeoLocation(ctx);
         Contact contact = new Contact(ctx);
 /*        List<EnrollDeviceRequest.Contact> contactBody = new ArrayList<>();
@@ -127,7 +128,7 @@ abstract class TrustedDevice extends BASE {
             simBody.add(smBody);
         }
         return new EnrollDeviceRequest(
-                user.getName(), user.getEmail(), user.getPhone(), user.getIdCard(), user.getAddress(),
+                user.getName(), user.getEmail(), user.getPhone(), user.getIdCard(), user.getAddress(),pin,
                 Device.name, ctx.getPackageName(), true, isUseFinger, true, c.isUseVpn(),
                 Device.notificationToken, key.getMeta(), key.getPubKey(), geo.getTimezone(), contact.getContacts().size(), locationBody, simBody);
     }
@@ -162,13 +163,21 @@ abstract class TrustedDevice extends BASE {
             simBody.add(smBody);
         }
         return new ValidateDeviceRequest(userId, Device.name, ctx.getPackageName(),
-                meta, key, geo.getTimezone(), contactBody, locationBody, simBody);
+                meta, key, geo.getTimezone(), contactBody.size(), locationBody, simBody);
     }
 
     protected static RemoveDeviceRequest collectDataRemove(Context ctx, String userId) {
         GeoLocation geo = new GeoLocation(ctx);
         RemoveDeviceRequest.Location l = new RemoveDeviceRequest.Location(geo.getLatitude(), geo.getLongitude());
         return new RemoveDeviceRequest(userId, ctx.getPackageName(), Device.name, l, geo.getTimezone());
+    }
+
+    protected static ValidatePinRequest collectDataValidatePin(Context context, String pin){
+        String deviceName = Device.name;
+        String packageName = context.getPackageName();
+        String userId = Storage.readDataLocal(context, USER_ID);
+        return new ValidatePinRequest(pin, packageName, deviceName, userId);
+
     }
 
     protected LastActiveRequest collectDataLastActive(Context ctx, String userId) {
@@ -218,21 +227,13 @@ abstract class TrustedDevice extends BASE {
                 useCase.updateNotification("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body));
     }
 
-    protected static Observable<FazpassTd> checking(Context ctx, CheckUserRequest body, String pin) {
+    protected static Observable<FazpassTd> checking(Context ctx, CheckUserRequest body) {
         return createUseCase(ctx)
                 .switchMap(useCase -> useCase.startService("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body))
                 .switchMap(resp -> Observable.create(subscriber -> {
-                    String key = Storage.readDataLocal(ctx, PRIVATE_KEY);
-                                /*
-                                 If status return false that mean user not found in our data
-                                 */
                     if (!resp.getStatus()) {
                         subscriber.onNext(new FazpassTd(TRUSTED_DEVICE.UNTRUSTED, CROSS_DEVICE.UNAVAILABLE));
-                        subscriber.onComplete();
                     } else {
-                                    /*
-                                      It will checking status of cross device for this user
-                                     */
                         Storage.storeDataLocal(ctx, USER_ID, resp.getData().getUser().getId());
                         CROSS_DEVICE crossStatus = CROSS_DEVICE.UNAVAILABLE;
                         try {
@@ -241,56 +242,31 @@ abstract class TrustedDevice extends BASE {
                             if (devices.size() >= 1) {
                                 crossStatus = CROSS_DEVICE.AVAILABLE;
                             }
-                        } catch (Exception ignored) {
-                        }
-                                    /*
-                                      It will checking status of trusted device for this user
-                                    */
-
-                        if (!resp.getData().getApps().getCurrent().getMeta().equals("")) {
-                            // If key in local was null, will automatically remove key in server
-                            if (key.equals("")) {
-                                removeDevice(ctx, new User(body.getEmail(), body.getPhone()), pin, resp.getData().getUser().getId(), crossStatus, resp.getData())
-                                        .subscribe(f -> {
-                                            subscriber.onNext(f);
-                                            subscriber.onComplete();
-                                        }, subscriber::onError);
-                            } else {
-                                subscriber.onNext(new FazpassTd(ctx, new User(body.getEmail(), body.getPhone()), pin, crossStatus, resp.getData()));
-                                subscriber.onComplete();
-                            }
-                        } else {
-                            subscriber.onNext(new FazpassTd(ctx, new User(body.getEmail(), body.getPhone()), pin, TRUSTED_DEVICE.UNTRUSTED, crossStatus, resp.getData()));
-                            subscriber.onComplete();
-                        }
-
+                        } catch (Exception ignored) {}
+                        subscriber.onNext(new FazpassTd(ctx, crossStatus, resp.getData()));
                     }
-
+                    subscriber.onComplete();
                 }));
     }
 
-    protected static Observable<FazpassTd> checkingNoPin(Context ctx, CheckUserRequest body){
-        return createUseCase(ctx)
-                .switchMap(useCase -> useCase.startService("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body))
-                .switchMap(resp-> Observable.create(subscriber->{
-
-                }));
-
-    }
     /**
      * Usage to remove device from server cause key on local is missing
      * @param userId - user ID from response
-     * @param crossDeviceStatus - cross device status
-     * @param resp - response from check user
      * @return FazpassTd
      * @see FazpassTd
      */
-    protected static Observable<FazpassTd> removeDevice(Context ctx, User user, String pin, String userId, CROSS_DEVICE crossDeviceStatus, CheckUserResponse resp) {
-        //Helper.sentryMessage("FORCE_REMOVE_DEVICE", collectDataRemove(ctx, userId));
+    protected static Observable<Boolean> removeDevice(Context ctx,  String userId) {
         return createUseCase(ctx)
                 .switchMap(useCase ->
                         useCase.removeDevice("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), collectDataRemove(ctx, userId)))
-                .map(data -> new FazpassTd(ctx, user, pin, TRUSTED_DEVICE.UNTRUSTED, crossDeviceStatus, resp));
+                .map(Response::getStatus);
+    }
+
+    protected static Observable<Boolean> validatePin(Context ctx, String pin){
+        return createUseCase(ctx)
+                .switchMap(useCase ->
+                    useCase.validatePin("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), collectDataValidatePin(ctx, pin)))
+                .map(Response::getStatus);
     }
 
     protected void sendNotification(Context ctx, List<CheckUserResponse.App> d, long timeOut, String userId, String notificationId) {
@@ -365,11 +341,40 @@ abstract class TrustedDevice extends BASE {
     }
 
     protected void validateUserByPin(Context ctx, String pin, TrustedDeviceListener<ValidateStatus> listener) {
-        Observable
+        if (pin.equals("")) {
+            throw new NullPointerException("PIN cannot be null or empty");
+        }
+        validatePin(ctx, pin)
+                .subscribeOn(Schedulers.newThread())
+                        .switchMap(bool->{
+                            if(bool){
+                                return Observable.create(s->{
+                                    ValidateDeviceRequest body = collectDataValidate(ctx);
+                                    s.onNext(body);
+                                    s.onComplete();
+                                });
+                            }
+                            throw new Exception("Validating pin failed");
+                        })
+                        .switchMap(body->validate(ctx, (ValidateDeviceRequest) body))
+                        .switchMap(resp->Observable.create(subscriber -> {
+                            ValidateStatus.Confidence cfd = new ValidateStatus.Confidence(
+                                    resp.getData().getMeta(),
+                                    resp.getData().getKey(),
+                                    resp.getData().getSim(),
+                                    resp.getData().getContact(),
+                                    resp.getData().getLocation()
+                            );
+                            ValidateStatus status = new ValidateStatus(resp.getStatus(), cfd);
+                            subscriber.onNext(status);
+                            subscriber.onComplete();
+                        }))
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(status -> listener.onSuccess((ValidateStatus) status), listener::onFailure);
+
+       /* Observable
                 .create(subscriber -> {
-                    if (pin.equals("")) {
-                        throw new NullPointerException("PIN cannot be null or empty");
-                    }
+
                     String meta = new FazpassKey().getMeta();
                     String key = Storage.readDataLocal(ctx, PRIVATE_KEY);
                     if (meta.equals("") || key.equals("")) {
@@ -411,7 +416,7 @@ abstract class TrustedDevice extends BASE {
                     subscriber.onComplete();
                 }))
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(status -> listener.onSuccess((ValidateStatus) status), listener::onFailure);
+                .subscribe(status -> listener.onSuccess((ValidateStatus) status), listener::onFailure);*/
     }
 
     protected void notificationExpired(Context ctx, String userId, String notificationId) {

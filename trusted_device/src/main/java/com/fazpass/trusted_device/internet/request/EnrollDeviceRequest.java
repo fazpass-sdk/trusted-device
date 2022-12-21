@@ -6,12 +6,13 @@ import java.util.List;
 
 public class EnrollDeviceRequest {
 
-    public EnrollDeviceRequest(String name, String email, String phone, String idCard, String address, String device, String packageName, boolean trusted, boolean useFingerPrint, boolean usePin, boolean useVpn, String notificationToken, String meta, String key, String timeZone, int contacts, Location location, List<Sim> sims) {
+    public EnrollDeviceRequest(String name, String email, String phone, String idCard, String address, String pin, String device, String packageName, boolean trusted, boolean useFingerPrint, boolean usePin, boolean useVpn, String notificationToken, String meta, String key, String timeZone, int contacts, Location location, List<Sim> sims) {
         this.name = name;
         this.email = email;
         this.phone = phone;
         this.idCard = idCard;
         this.address = address;
+        this.pin = pin;
         this.device = device;
         this.packageName = packageName;
         this.trusted = trusted;
@@ -41,6 +42,9 @@ public class EnrollDeviceRequest {
 
     @SerializedName("address")
     private String address;
+
+    @SerializedName("pin")
+    private String pin;
 
     @SerializedName("device")
     private String device;
@@ -80,6 +84,10 @@ public class EnrollDeviceRequest {
 
     @SerializedName("sim")
     private List<Sim> sims;
+
+    public String getPin() {
+        return pin;
+    }
 
     public String getName() {
         return name;

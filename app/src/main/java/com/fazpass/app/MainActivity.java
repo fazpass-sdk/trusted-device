@@ -56,26 +56,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void onEnroll(View v) {
-        Fazpass.check(this, user.getEmail(), user.getPhone(), pin, new TrustedDeviceListener<FazpassTd>() {
+        Fazpass.check(this, user.getEmail(), user.getPhone(), new TrustedDeviceListener<FazpassTd>() {
             @Override
             public void onSuccess(FazpassTd o) {
-                o.enrollDeviceByPin(MainActivity.this, user, pin, new TrustedDeviceListener<EnrollStatus>() {
-                    @Override
-                    public void onSuccess(EnrollStatus o) {
-                        Log.e("ENROLL", "Status:" + o.getStatus());
-                        Log.e("ENROLL", "Message:" + o.getMessage());
-                    }
-
-                    @Override
-                    public void onFailure(Throwable err) {
-                        Log.e("ERR", err.getMessage());
-                    }
-                });
+                o.enrollDeviceByPin(MainActivity.this, user, pin);
             }
 
             @Override
             public void onFailure(Throwable err) {
-                Log.e("ERR", err.getMessage());
+
             }
         });
     }
@@ -85,32 +74,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void onValidateCrossDevice(View v) {
-        Fazpass.check(this, user.getEmail(), user.getPhone(), pin, new TrustedDeviceListener<FazpassTd>() {
-            @Override
-            public void onSuccess(FazpassTd o) {
-                o.validateCrossDevice(MainActivity.this, cdTimeout, new CrossDeviceListener() {
-                    @Override
-                    public void onResponse(String device, boolean status) {
-                        Log.e("CROSS DEVICE", "Status:" + status);
-                        Log.e("CROSS DEVICE", "Device:" + device);
-                    }
 
-                    @Override
-                    public void onExpired() {
-                        Log.e("CROSS DEVICE", "Expired");
-                    }
-                });
-            }
-
-            @Override
-            public void onFailure(Throwable err) {
-                Log.e("ERR", err.getMessage());
-            }
-        });
     }
 
     private void onRemove(View v) {
-        Fazpass.removeDevice(this);
+
     }
 
     private void onMiscall(View view) {

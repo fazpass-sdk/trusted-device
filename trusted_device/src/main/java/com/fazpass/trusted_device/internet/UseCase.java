@@ -13,6 +13,7 @@ import com.fazpass.trusted_device.internet.request.RemoveDeviceRequest;
 import com.fazpass.trusted_device.internet.request.UpdateFcmRequest;
 import com.fazpass.trusted_device.internet.request.UpdateNotificationRequest;
 import com.fazpass.trusted_device.internet.request.ValidateDeviceRequest;
+import com.fazpass.trusted_device.internet.request.ValidatePinRequest;
 import com.fazpass.trusted_device.internet.response.CheckUserResponse;
 import com.fazpass.trusted_device.internet.response.EnrollDeviceResponse;
 import com.fazpass.trusted_device.internet.response.HEAuthResponse;
@@ -61,6 +62,9 @@ public interface UseCase {
     @PUT("v1/trusted-device/update/notification-token")
     Observable<Response> updateFcm(@Header("Authorization")String token, @Body UpdateFcmRequest body);
 
+    @POST("v1/trusted-device/validate/pin")
+    Observable<Response> validatePin(@Header("Authorization")String token, @Body ValidatePinRequest body);
+
     @POST("v1/otp/request")
     Observable<Response<OTPResponse>> requestOTPWithPhone(@Header("Authorization")String token, @Body OTPWithPhoneRequest body);
 
@@ -81,4 +85,6 @@ public interface UseCase {
 
     @GET("{path}")
     Observable<Response> HERedirectAuth(@Path("path") String path, @QueryMap Map<String, String> queries);
+
+
 }

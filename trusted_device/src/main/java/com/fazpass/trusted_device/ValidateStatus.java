@@ -32,7 +32,7 @@ public class ValidateStatus {
             this.location = location;
         }
 
-        public double getConfidence(){
+        public double getSummary(){
             return meta + key + sim + contact + location;
         }
     }

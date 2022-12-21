@@ -7,14 +7,14 @@ import java.util.List;
 public class ValidateDeviceRequest {
 
 
-    public ValidateDeviceRequest(String userId, String device, String packageName, String meta, String key, String timeZone, List<Contact> contacts, Location location, List<Sim> sims) {
+    public ValidateDeviceRequest(String userId, String device, String packageName, String meta, String key, String timeZone, long contacts, Location location, List<Sim> sims) {
         this.userId = userId;
         this.device = device;
         this.packageName = packageName;
         this.meta = meta;
         this.key = key;
         this.timeZone = timeZone;
-        this.contacts = contacts;
+        this.contactCount = contacts;
         this.location = location;
         this.sims = sims;
     }
@@ -37,8 +37,11 @@ public class ValidateDeviceRequest {
     @SerializedName("key")
     private String key;
 
-    @SerializedName("contacts")
-    private List<Contact> contacts;
+   /* @SerializedName("contacts")
+    private List<Contact> contacts;*/
+
+   @SerializedName("contact_count")
+    private long contactCount;
 
     @SerializedName("location")
     private Location location;
@@ -147,8 +150,12 @@ public class ValidateDeviceRequest {
         return timeZone;
     }
 
-    public List<Contact> getContacts() {
+    /*public List<Contact> getContacts() {
         return contacts;
+    }*/
+
+    public long getContactCount() {
+        return contactCount;
     }
 
     public Location getLocation() {

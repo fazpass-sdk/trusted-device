@@ -23,15 +23,13 @@ class FazpassKey {
     private Context context;
     private String pubKey;
     private static String meta;
-    private String pin;
     private User user;
     public FazpassKey(){
 
     }
 
-    public FazpassKey(Context context, User user, String pin) {
+    public FazpassKey(Context context, User user) {
         this.context = context;
-        this.pin = BCrypt.withDefaults().hashToString(12, pin.toCharArray());;
         this.user = user;
         initialize();
     }
@@ -41,7 +39,6 @@ class FazpassKey {
             pubKey = UUID.randomUUID().toString();
             String keyStoreAlias = generateKeyAlias(pubKey);
             String password = BCrypt.withDefaults().hashToString(12, pubKey.toCharArray());
-            Storage.storeDataLocal(context, USER_PIN, pin);
             Storage.storeDataLocal(context, PUBLIC_KEY, pubKey);
             Storage.storeDataLocal(context, PRIVATE_KEY, password);
             meta = Crypto.encrypt(keyStoreAlias, password);
@@ -59,7 +56,6 @@ class FazpassKey {
             json.put(PUBLIC_KEY, uuid);
             json.put(USER_PHONE, user.getPhone());
             json.put(USER_EMAIL, user.getEmail());
-            json.put(USER_PIN, pin);
             json.put(DEVICE, Device.name);
             return json.toString();
         } catch (JSONException e) {
@@ -75,10 +71,6 @@ class FazpassKey {
 
     public String getMeta() {
         return meta;
-    }
-
-    public String getPin() {
-        return pin;
     }
 
     public static void setMeta(String meta) {

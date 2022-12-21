@@ -73,7 +73,7 @@ public abstract class Fazpass extends TrustedDevice{
      * Removing device without listener
      * @author Anvarisy
      */
-    public static void removeDevice(Context ctx) {
+/*    public static void removeDevice(Context ctx, String pin) {
         Observable
                 .create(emitter -> {
                     String userId = Storage.readDataLocal(ctx,USER_ID);
@@ -85,17 +85,28 @@ public abstract class Fazpass extends TrustedDevice{
                 .switchMap(data -> remove(ctx, (RemoveDeviceRequest) data))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(resp-> Storage.removeDataLocal(ctx), Sentry::captureException);
+        return null;
+    }*/
+
+    public static void removeDevice(Context context, String pin, TrustedDeviceListener<Boolean> listener){
+       validatePin(context, pin)
+               .subscribeOn(Schedulers.newThread())
+               .switchMap(bool->{
+                   if(bool){
+                       return removeDevice(context, Storage.readDataLocal(context, USER_ID));
+                   }
+                   throw new Exception("Validating pin failed");
+               }).subscribe(listener::onSuccess, listener::onFailure);
     }
 
     /**
      * It will check status of trusted device status & cross device status and returning new object of FazpassTd
      * @param email-
      * @param phone-
-     * @param pin-
      * @param listener-
      */
 
-    public static void check(Context ctx,@NonNull String email, @NonNull String phone,@NonNull String pin, TrustedDeviceListener<FazpassTd> listener) {
+    public static void check(Context ctx,@NonNull String email, @NonNull String phone, TrustedDeviceListener<FazpassTd> listener) {
         initializeChecking(ctx);
         Observable.create(emitter -> {
             if (email.equals("") && phone.equals("")) {
@@ -109,26 +120,7 @@ public abstract class Fazpass extends TrustedDevice{
             emitter.onNext(body);
             emitter.onComplete();
         }).subscribeOn(Schedulers.newThread())
-                .switchMap(data -> checking(ctx, (CheckUserRequest) data, pin))
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(listener::onSuccess, listener::onFailure);
-    }
-
-    public static void check(Context ctx, String email, String phone, TrustedDeviceListener<FazpassTd> listener){
-        initializeChecking(ctx);
-        Observable.create(emitter->{
-            if (email.equals("") && phone.equals("")) {
-                throw new NullPointerException("email or phone cannot be empty");
-            }
-            String packageName = ctx.getPackageName();
-            GeoLocation location = new GeoLocation(ctx);
-            CheckUserRequest.Location locationDetail = new CheckUserRequest.Location(location.getLatitude(), location.getLongitude());
-            CheckUserRequest body = new CheckUserRequest(email, phone, packageName, Device.name, location.getTimezone(), locationDetail);
-            //Helper.sentryMessage("CHECK", body);
-            emitter.onNext(body);
-            emitter.onComplete();
-        }).subscribeOn(Schedulers.newThread())
-                .switchMap(body->checkingNoPin(ctx, (CheckUserRequest) body))
+                .switchMap(data -> checking(ctx, (CheckUserRequest) data))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(listener::onSuccess, listener::onFailure);
     }

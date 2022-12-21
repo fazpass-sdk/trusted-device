@@ -29,35 +29,21 @@ import io.sentry.Sentry;
 
 public class FazpassTd extends Fazpass{
     private static CheckUserResponse cUser;
+    private BroadcastReceiver messageReceiver;
     private FazpassTd(){
         throw new RuntimeException("Stub!");
     }
-    private BroadcastReceiver messageReceiver;
 
     protected FazpassTd(TRUSTED_DEVICE td, CROSS_DEVICE cd){
         td_status = td;
         cd_status = cd;
     }
 
-    protected FazpassTd(Context ctx, User user, String pin, TRUSTED_DEVICE td, CROSS_DEVICE cd, CheckUserResponse resp){
-        if(resp.getApps().isCrossApp()){
-            autoEnroll(ctx, user, pin);
-        }else{
-            td_status = td;
-        }
-        cd_status = cd;
+    protected FazpassTd(Context context, CROSS_DEVICE cd, CheckUserResponse resp){
         cUser = resp;
-    }
-
-    protected void autoEnroll(Context ctx, User user, String pin){
-        enrollDeviceByPin(ctx, user, pin);
-        td_status = TRUSTED_DEVICE.TRUSTED;
-    }
-
-    protected FazpassTd(Context context, User user, String pin, CROSS_DEVICE cd, CheckUserResponse resp){
-        cUser = resp;
-        FazpassKey.setMeta(resp.getApps().getCurrent().getMeta());
-        cd_status = cd;
+        if(!resp.getApps().getCurrent().getMeta().equals(""))
+            FazpassKey.setMeta(resp.getApps().getCurrent().getMeta());
+        this.cd_status = cd;
         String password = Storage.readDataLocal(context, PRIVATE_KEY);
         try{
             String hashedInformation = resp.getApps().getCurrent().getMeta();
@@ -70,19 +56,17 @@ public class FazpassTd extends Fazpass{
                         .subscribeOn(Schedulers.newThread())
                         .subscribe();
             }else{
-                if(resp.getApps().isCrossApp()){
-                   autoEnroll(context, user, pin);
-                }else {
+                if(resp.getApps().isCrossApp())
+                    td_status = TRUSTED_DEVICE.TRUSTED;
+                else
                     td_status = TRUSTED_DEVICE.UNTRUSTED;
-                }
-
             }
         } catch (Exception e) {
-            if(resp.getApps().isCrossApp()){
-                autoEnroll(context, user, pin);
-            }else {
+            if(resp.getApps().isCrossApp())
+                td_status = TRUSTED_DEVICE.TRUSTED;
+            else
                 td_status = TRUSTED_DEVICE.UNTRUSTED;
-            }
+
         }
     }
 
@@ -97,7 +81,46 @@ public class FazpassTd extends Fazpass{
         if(pin.equals("")){
             throw new NullPointerException("PIN cannot be null or empty");
         }
-        Observable
+        if(cUser.getApps().getCurrent().getMeta().equals("")){
+            Observable.create(subscriber->{
+                EnrollDeviceRequest body = collectDataEnroll(ctx, user, pin, false);
+                //Helper.sentryMessage("ENROLL_DEVICE_BY_PIN", body);
+                subscriber.onNext(body);
+                subscriber.onComplete();
+            }).subscribeOn(Schedulers.newThread())
+                    .switchMap(body -> enroll(ctx, (EnrollDeviceRequest) body))
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(resp->enroll.onSuccess(new EnrollStatus(resp.getStatus(), resp.getMessage())),
+                            err->{
+                                enroll.onFailure(err);
+                                Sentry.captureException(err);
+                            });
+        }else{
+            validatePin(ctx, pin)
+                    .subscribeOn(Schedulers.newThread())
+                    .switchMap(bool->{
+                        if(bool){
+                            return removeDevice(ctx, Storage.readDataLocal(ctx, USER_ID));
+                        }
+                        throw new Exception("Validating pin failed");
+                    }).
+                    switchMap(s-> Observable.create(subscriber->{
+                        EnrollDeviceRequest body = collectDataEnroll(ctx, user, pin, false);
+                        //Helper.sentryMessage("ENROLL_DEVICE_BY_PIN", body);
+                        subscriber.onNext(body);
+                        subscriber.onComplete();
+                    })).subscribeOn(Schedulers.newThread())
+                    .switchMap(body -> enroll(ctx, (EnrollDeviceRequest) body))
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(resp->enroll.onSuccess(new EnrollStatus(resp.getStatus(), resp.getMessage())),
+                            err->{
+                                enroll.onFailure(err);
+                                Sentry.captureException(err);
+                            });
+        }
+
+
+       /* Observable
                 .create(subscriber -> {
                     EnrollDeviceRequest body = collectDataEnroll(ctx, user, pin, false);
                     //Helper.sentryMessage("ENROLL_DEVICE_BY_PIN", body);
@@ -111,7 +134,7 @@ public class FazpassTd extends Fazpass{
                         err -> {
                             enroll.onFailure(err);
                             Sentry.captureException(err);
-                        });
+                        });*/
     }
 
     /**
@@ -121,19 +144,42 @@ public class FazpassTd extends Fazpass{
      * @author Anvarisy
      */
     public void enrollDeviceByPin(Context ctx, User user, @NonNull String pin) {
-        if(pin.equals("")){
+        if (pin.equals("")) {
             throw new NullPointerException("PIN cannot be null or empty");
         }
-        Observable
-                .create(subscriber -> {
-                    EnrollDeviceRequest body = collectDataEnroll(ctx, user,pin, false);
-                    //Helper.sentryMessage("ENROLL_DEVICE_BY_PIN", body);
-                    subscriber.onNext(body);
-                    subscriber.onComplete();
-                }).subscribeOn(Schedulers.newThread())
-                .switchMap(body -> enroll(ctx, (EnrollDeviceRequest) body))
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(resp->{}, Sentry::captureException);
+        if (cUser.getApps().getCurrent().getMeta().equals("")) {
+            Observable.create(subscriber -> {
+                        EnrollDeviceRequest body = collectDataEnroll(ctx, user, pin, false);
+                        //Helper.sentryMessage("ENROLL_DEVICE_BY_PIN", body);
+                        subscriber.onNext(body);
+                        subscriber.onComplete();
+                    }).subscribeOn(Schedulers.newThread())
+                    .switchMap(body -> enroll(ctx, (EnrollDeviceRequest) body))
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(resp -> {
+                            },
+                            Sentry::captureException);
+        } else {
+            validatePin(ctx, pin)
+                    .subscribeOn(Schedulers.newThread())
+                    .switchMap(bool -> {
+                        if (bool) {
+                            return removeDevice(ctx, Storage.readDataLocal(ctx, USER_ID));
+                        }
+                        throw new Exception("Validating pin failed");
+                    }).
+                    switchMap(s -> Observable.create(subscriber -> {
+                        EnrollDeviceRequest body = collectDataEnroll(ctx, user, pin, false);
+                        //Helper.sentryMessage("ENROLL_DEVICE_BY_PIN", body);
+                        subscriber.onNext(body);
+                        subscriber.onComplete();
+                    })).subscribeOn(Schedulers.newThread())
+                    .switchMap(body -> enroll(ctx, (EnrollDeviceRequest) body))
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(resp -> {
+                            },
+                            Sentry::captureException);
+        }
     }
 
     /**
@@ -190,34 +236,6 @@ public class FazpassTd extends Fazpass{
         }else{
             validateUserByPin(ctx, pin, listener);
         }
-    }
-
-    /**
-     * Removing device with listener
-     * @param listener - It will listen status of removing status
-     * @author Anvarisy
-     */
-    public void removeDevice(Context ctx, TrustedDeviceListener<RemoveStatus> listener) {
-        Observable
-                .create(emitter -> {
-                    String userId = Storage.readDataLocal(ctx,USER_ID);
-                    RemoveDeviceRequest body = collectDataRemove(ctx, userId);
-                    //Helper.sentryMessage("REMOVE_DEVICE", body);
-                    emitter.onNext(body);
-                    emitter.onComplete();
-                }).subscribeOn(Schedulers.newThread())
-                .switchMap(data -> remove(ctx, (RemoveDeviceRequest) data))
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                        resp-> {
-                            listener.onSuccess(new RemoveStatus(resp.getStatus(),resp.getMessage()));
-                            Storage.removeDataLocal(ctx);
-                        },
-                        err-> {
-                            listener.onFailure(err);
-                            Sentry.captureException(err);
-                        })
-                ;
     }
 
     /**
