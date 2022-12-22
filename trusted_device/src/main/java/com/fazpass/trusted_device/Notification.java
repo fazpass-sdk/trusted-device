@@ -8,9 +8,12 @@ import android.content.Intent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
+
+import java.util.function.Function;
 
 import at.favre.lib.crypto.bcrypt.BCrypt;
 
@@ -24,19 +27,47 @@ public class Notification {
 
     protected static boolean IS_REQUIRE_PIN = false;
 
+    /**
+     * Dialog builder class for Fazpass.launchedFromNotification dialogBuilder parameter.
+     */
     public static class DialogBuilder {
         private final Context context;
         private View contentView;
+        private Function<String, String> textMessage;
+        private int textMessageId;
         private int positiveButtonId;
         private int negativeButtonId;
         private int inputId;
 
+        /**
+         * Default constructor for dialog builder.
+         * <p>
+         * Before passing this instance as an argument, every field must be set by:<p>
+         * <code>
+         *     setContentView(View)
+         *     setTextMessage(device -> String)
+         *     setTextMessageId(int)
+         *     setInputId(int)
+         *     setPositiveButtonId(int)
+         *     setNegativeButtonId(int)
+         * </code>
+         */
         DialogBuilder(Context context) {
             this.context = context;
         }
 
         public DialogBuilder setContentView(View contentView) {
             this.contentView = contentView;
+            return this;
+        }
+
+        public DialogBuilder setTextMessage(Function<String, String> textMessage) {
+            this.textMessage = textMessage;
+            return this;
+        }
+
+        public DialogBuilder setTextMessageId(int textMessageId) {
+            this.textMessageId = textMessageId;
             return this;
         }
 
@@ -57,12 +88,14 @@ public class Notification {
 
         AlertDialog build(String notificationId, String notificationToken, String device, int requestId) {
             if (contentView==null||inputId==0||positiveButtonId==0||negativeButtonId==0)
-                throw new NullPointerException("every field must be set");
+                throw new NullPointerException("Fazpass Notification: every field must be set");
             String cryptPin = Storage.readDataLocal(context, USER_PIN);
 
             final EditText input = contentView.findViewById(inputId);
             final Button positiveButton = contentView.findViewById(positiveButtonId);
             final Button negativeButton = contentView.findViewById(negativeButtonId);
+            final TextView textMessageView = contentView.findViewById(textMessageId);
+            textMessageView.setText(textMessage.apply(device));
             AlertDialog dialog = new AlertDialog.Builder(context)
                     .setView(contentView)
                     .create();

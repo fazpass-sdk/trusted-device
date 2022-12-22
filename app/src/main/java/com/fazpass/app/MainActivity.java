@@ -104,6 +104,8 @@ public class MainActivity extends AppCompatActivity {
         View view = getLayoutInflater().inflate(R.layout.dialog_notification, null);
         return Fazpass.notificationDialogBuilder(this)
                 .setContentView(view)
+                .setTextMessage(s -> getString(com.fazpass.trusted_device.R.string.notification_message, s))
+                .setTextMessageId(R.id.notification_message)
                 .setPositiveButtonId(R.id.notification_yes)
                 .setNegativeButtonId(R.id.notification_no)
                 .setInputId(R.id.notification_input_pin);

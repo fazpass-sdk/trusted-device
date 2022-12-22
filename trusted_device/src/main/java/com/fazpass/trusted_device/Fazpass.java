@@ -96,7 +96,9 @@ public abstract class Fazpass extends TrustedDevice{
                        return removeDevice(context, Storage.readDataLocal(context, USER_ID));
                    }
                    throw new Exception("Validating pin failed");
-               }).subscribe(listener::onSuccess, listener::onFailure);
+               })
+               .observeOn(AndroidSchedulers.mainThread())
+               .subscribe(listener::onSuccess, listener::onFailure);
     }
 
     /**

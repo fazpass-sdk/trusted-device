@@ -442,7 +442,7 @@ abstract class TrustedDevice extends BASE {
                         AlertDialog alertDialog = customDialogBuilder
                                 .build(notificationId, notificationToken, device, -1);
                         alertDialog.show();
-                        activity.finish();
+                        //activity.finish();
                     } else {
                         Intent dialogIntent = NotificationActivity
                                 .buildIntent(activity, notificationId, notificationToken, device, -1);
