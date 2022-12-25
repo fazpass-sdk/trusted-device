@@ -71,6 +71,7 @@ import java.util.stream.Collectors;
 import at.favre.lib.crypto.bcrypt.BCrypt;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.functions.Consumer;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import io.sentry.Sentry;
 import kotlin.text.Regex;
@@ -251,27 +252,25 @@ abstract class TrustedDevice extends BASE {
 
     /**
      * Usage to remove device from server cause key on local is missing
-     * @param userId - user ID from response
+     * @param userId - user ID from switchMap
      * @return FazpassTd
      * @see FazpassTd
      */
-    protected static Observable<Boolean> removeDevice(Context ctx,  String userId) {
+    protected static Observable<Response> removeDevice(Context ctx,  String userId) {
         return createUseCase(ctx)
                 .switchMap(useCase ->
-                        useCase.removeDevice("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), collectDataRemove(ctx, userId)))
-                .map(Response::getStatus);
+                        useCase.removeDevice("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), collectDataRemove(ctx, userId)));
     }
 
-    protected static Observable<Boolean> validatePin(Context ctx, String pin){
+    protected static Observable<Response> validatePin(Context ctx, String pin){
         return createUseCase(ctx)
                 .switchMap(useCase ->
-                    useCase.validatePin("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), collectDataValidatePin(ctx, pin)))
-                .map(Response::getStatus);
+                        useCase.validatePin("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), collectDataValidatePin(ctx, pin)));
     }
 
     protected void sendNotification(Context ctx, List<CheckUserResponse.App> d, long timeOut, String userId, String notificationId) {
         Observable
-                .create(subscriber -> {
+                .<NotificationRequest>create(subscriber -> {
                     List<CheckUserResponse.App> devices = d.stream()
                             .filter(app -> app.getApp().equals(ctx.getPackageName())).collect(Collectors.toList());
                     List<NotificationRequest.Device> receiver = new ArrayList<>();
@@ -286,7 +285,7 @@ abstract class TrustedDevice extends BASE {
                     subscriber.onNext(body);
                     subscriber.onComplete();
                 }).subscribeOn(Schedulers.newThread())
-                .switchMap(body -> requestNotification(ctx, (NotificationRequest) body))
+                .switchMap(body -> requestNotification(ctx, body))
                 .subscribe(s -> {}, err -> Log.e("SEND NOTIFICATION", err.getMessage()));
     }
 
@@ -305,7 +304,7 @@ abstract class TrustedDevice extends BASE {
                 super.onAuthenticationSucceeded(result);
                 //Helper.sentryMessage("VALIDATE_BY_FINGER", body);
                 Observable
-                        .create(subscriber -> {
+                        .<ValidateDeviceRequest>create(subscriber -> {
                             ValidateDeviceRequest body = collectDataValidate(ctx);
                             if (body.getKey().equals("")) {
                                 throw Error.localDataMissing();
@@ -313,8 +312,8 @@ abstract class TrustedDevice extends BASE {
                             subscriber.onNext(body);
                             subscriber.onComplete();
                         }).subscribeOn(Schedulers.newThread())
-                        .switchMap(body -> validate(ctx, (ValidateDeviceRequest) body))
-                        .switchMap(resp -> Observable.create(subscriber -> {
+                        .switchMap(body -> validate(ctx, body))
+                        .map(resp -> {
                             ValidateStatus.Confidence cfd = new ValidateStatus.Confidence(
                                     resp.getData().getMeta(),
                                     resp.getData().getKey(),
@@ -322,12 +321,10 @@ abstract class TrustedDevice extends BASE {
                                     resp.getData().getContact(),
                                     resp.getData().getLocation()
                             );
-                            ValidateStatus status = new ValidateStatus(resp.getStatus(), cfd);
-                            subscriber.onNext(status);
-                            subscriber.onComplete();
-                        }))
+                            return new ValidateStatus(resp.getStatus(), cfd);
+                        })
                         .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(status -> listener.onSuccess((ValidateStatus) status), listener::onFailure);
+                        .subscribe(listener::onSuccess, listener::onFailure);
             }
 
             @Override
@@ -346,31 +343,25 @@ abstract class TrustedDevice extends BASE {
         }
         validatePin(ctx, pin)
                 .subscribeOn(Schedulers.newThread())
-                        .switchMap(bool->{
-                            if(bool){
-                                return Observable.create(s->{
-                                    ValidateDeviceRequest body = collectDataValidate(ctx);
-                                    s.onNext(body);
-                                    s.onComplete();
-                                });
-                            }
-                            throw new Exception("Validating pin failed");
-                        })
-                        .switchMap(body->validate(ctx, (ValidateDeviceRequest) body))
-                        .switchMap(resp->Observable.create(subscriber -> {
-                            ValidateStatus.Confidence cfd = new ValidateStatus.Confidence(
-                                    resp.getData().getMeta(),
-                                    resp.getData().getKey(),
-                                    resp.getData().getSim(),
-                                    resp.getData().getContact(),
-                                    resp.getData().getLocation()
-                            );
-                            ValidateStatus status = new ValidateStatus(resp.getStatus(), cfd);
-                            subscriber.onNext(status);
-                            subscriber.onComplete();
-                        }))
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(status -> listener.onSuccess((ValidateStatus) status), listener::onFailure);
+                .map(response->{
+                    if (response.getStatus()) {
+                        return collectDataValidate(ctx);
+                    }
+                    throw new Exception(response.getMessage());
+                })
+                .switchMap(body->validate(ctx, body))
+                .map(resp->{
+                    ValidateStatus.Confidence cfd = new ValidateStatus.Confidence(
+                            resp.getData().getMeta(),
+                            resp.getData().getKey(),
+                            resp.getData().getSim(),
+                            resp.getData().getContact(),
+                            resp.getData().getLocation()
+                    );
+                    return new ValidateStatus(resp.getStatus(), cfd);
+                })
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(listener::onSuccess, listener::onFailure);
 
        /* Observable
                 .create(subscriber -> {
@@ -427,36 +418,9 @@ abstract class TrustedDevice extends BASE {
                 .subscribe(s -> {}, err -> Log.e("SEND NOTIFICATION", err.getMessage()));
     }
 
-    public static void launchedFromNotification(Activity activity, @Nullable Bundle extras, boolean requirePin, @Nullable Notification.DialogBuilder customDialogBuilder) {
-        Notification.IS_REQUIRE_PIN = requirePin;
-        if (extras != null) {
-            String app = extras.getString("app");
-            String status = extras.getString("status");
-            String device = extras.getString("device");
-            String notificationToken = extras.getString("notification_token");
-            String notificationId = extras.getString("uuid_notif");
-
-            if (Objects.equals(app, activity.getPackageName())) {
-                if (Objects.equals(status, "request")) {
-                    if (customDialogBuilder != null) {
-                        AlertDialog alertDialog = customDialogBuilder
-                                .build(notificationId, notificationToken, device, -1);
-                        alertDialog.show();
-                        //activity.finish();
-                    } else {
-                        Intent dialogIntent = NotificationActivity
-                                .buildIntent(activity, notificationId, notificationToken, device, -1);
-                        activity.startActivity(dialogIntent);
-                        activity.finish();
-                    }
-                }
-            }
-        }
-    }
-
     static Observable<Response> updateFcm(Context ctx, String token) {
         return Observable
-                .create(subscriber -> {
+                .<UpdateFcmRequest>create(subscriber -> {
                     String meta = Storage.readDataLocal(ctx, META);
                     String userId = Storage.readDataLocal(ctx, USER_ID);
                     String packageName = ctx.getPackageName();
@@ -466,20 +430,12 @@ abstract class TrustedDevice extends BASE {
                     subscriber.onComplete();
                 })
                 .switchMap(body -> createUseCase(ctx).switchMap(useCase ->
-                        useCase.updateFcm("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), (UpdateFcmRequest) body)));
+                        useCase.updateFcm("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body)));
     }
 
     protected static Observable<Response<OTPResponse>> requestOtpWithPhone(Context ctx, OTPWithPhoneRequest body) {
-        return Observable.create(subscriber -> {
-            UseCase u = Roaming.start(Storage.readDataLocal(ctx, BASE_URL));
-            u.requestOTPWithPhone("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body)
-                    .subscribeOn(Schedulers.newThread())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(resp -> {
-                        subscriber.onNext(resp);
-                        subscriber.onComplete();
-                    }, subscriber::onError);
-        });
+        return createUseCase(ctx)
+                .switchMap(useCase -> useCase.requestOTPWithPhone("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body));
     }
 
     protected static Observable<Response<OTPResponse>> requestOtpWithEmail(Context ctx, OTPWithEmailRequest body) {
@@ -488,16 +444,8 @@ abstract class TrustedDevice extends BASE {
     }
 
     protected static Observable<Response<OTPResponse>> generateOtpWithPhone(Context ctx, OTPWithPhoneRequest body) {
-        return Observable.create(subscriber -> {
-            UseCase u = Roaming.start(Storage.readDataLocal(ctx, BASE_URL));
-            u.generateOTPWithPhone("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body)
-                    .subscribeOn(Schedulers.newThread())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(resp -> {
-                        subscriber.onNext(resp);
-                        subscriber.onComplete();
-                    }, subscriber::onError);
-        });
+        return createUseCase(ctx)
+                .switchMap(useCase -> useCase.generateOTPWithPhone("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body));
     }
 
     protected static Observable<Response<OTPResponse>> generateOtpWithEmail(Context ctx, OTPWithEmailRequest body) {
@@ -617,8 +565,8 @@ abstract class TrustedDevice extends BASE {
     }
 
     protected static Observable<Response<HEAuthResponse>> getAuthPage(Context ctx, HEAuthRequest body) {
-        return createUseCase(ctx).switchMap(useCase ->
-                useCase.HEAuth("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body));
+        return createUseCase(ctx)
+                .switchMap(useCase -> useCase.HEAuth("Bearer " + Storage.readDataLocal(ctx, MERCHANT_TOKEN), body));
     }
 
     protected static Observable<Response> launchAuthPage(String url) {

@@ -82,13 +82,13 @@ public class FazpassTd extends Fazpass{
             throw new NullPointerException("PIN cannot be null or empty");
         }
         if(cUser.getApps().getCurrent().getMeta().equals("")){
-            Observable.create(subscriber->{
+            Observable.<EnrollDeviceRequest>create(subscriber->{
                 EnrollDeviceRequest body = collectDataEnroll(ctx, user, pin, false);
                 //Helper.sentryMessage("ENROLL_DEVICE_BY_PIN", body);
                 subscriber.onNext(body);
                 subscriber.onComplete();
             }).subscribeOn(Schedulers.newThread())
-                    .switchMap(body -> enroll(ctx, (EnrollDeviceRequest) body))
+                    .switchMap(body -> enroll(ctx, body))
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(resp->enroll.onSuccess(new EnrollStatus(resp.getStatus(), resp.getMessage())),
                             err->{
@@ -98,19 +98,21 @@ public class FazpassTd extends Fazpass{
         }else{
             validatePin(ctx, pin)
                     .subscribeOn(Schedulers.newThread())
-                    .switchMap(bool->{
-                        if(bool){
+                    .switchMap(response->{
+                        if (response.getStatus()) {
                             return removeDevice(ctx, Storage.readDataLocal(ctx, USER_ID));
                         }
-                        throw new Exception("Validating pin failed");
-                    }).
-                    switchMap(s-> Observable.create(subscriber->{
-                        EnrollDeviceRequest body = collectDataEnroll(ctx, user, pin, false);
-                        //Helper.sentryMessage("ENROLL_DEVICE_BY_PIN", body);
-                        subscriber.onNext(body);
-                        subscriber.onComplete();
-                    })).subscribeOn(Schedulers.newThread())
-                    .switchMap(body -> enroll(ctx, (EnrollDeviceRequest) body))
+                        throw new Exception(response.getMessage());
+                    })
+                    .map(response->{
+                        if (response.getStatus()) {
+                            EnrollDeviceRequest body = collectDataEnroll(ctx, user, pin, false);
+                            //Helper.sentryMessage("ENROLL_DEVICE_BY_PIN", body);
+                            return body;
+                        }
+                        throw new Exception(response.getMessage());
+                    })
+                    .switchMap(body -> enroll(ctx, body))
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(resp->enroll.onSuccess(new EnrollStatus(resp.getStatus(), resp.getMessage())),
                             err->{
@@ -148,37 +150,35 @@ public class FazpassTd extends Fazpass{
             throw new NullPointerException("PIN cannot be null or empty");
         }
         if (cUser.getApps().getCurrent().getMeta().equals("")) {
-            Observable.create(subscriber -> {
+            Observable.<EnrollDeviceRequest>create(subscriber -> {
                         EnrollDeviceRequest body = collectDataEnroll(ctx, user, pin, false);
                         //Helper.sentryMessage("ENROLL_DEVICE_BY_PIN", body);
                         subscriber.onNext(body);
                         subscriber.onComplete();
                     }).subscribeOn(Schedulers.newThread())
-                    .switchMap(body -> enroll(ctx, (EnrollDeviceRequest) body))
+                    .switchMap(body -> enroll(ctx, body))
                     .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(resp -> {
-                            },
-                            Sentry::captureException);
+                    .subscribe(resp -> {}, Sentry::captureException);
         } else {
             validatePin(ctx, pin)
                     .subscribeOn(Schedulers.newThread())
-                    .switchMap(bool -> {
-                        if (bool) {
+                    .switchMap(response -> {
+                        if (response.getStatus()) {
                             return removeDevice(ctx, Storage.readDataLocal(ctx, USER_ID));
                         }
-                        throw new Exception("Validating pin failed");
-                    }).
-                    switchMap(s -> Observable.create(subscriber -> {
-                        EnrollDeviceRequest body = collectDataEnroll(ctx, user, pin, false);
-                        //Helper.sentryMessage("ENROLL_DEVICE_BY_PIN", body);
-                        subscriber.onNext(body);
-                        subscriber.onComplete();
-                    })).subscribeOn(Schedulers.newThread())
-                    .switchMap(body -> enroll(ctx, (EnrollDeviceRequest) body))
+                        throw new Exception(response.getMessage());
+                    })
+                    .map(response->{
+                        if (response.getStatus()) {
+                            EnrollDeviceRequest body = collectDataEnroll(ctx, user, pin, false);
+                            //Helper.sentryMessage("ENROLL_DEVICE_BY_PIN", body);
+                            return body;
+                        }
+                        throw new Exception(response.getMessage());
+                    })
+                    .switchMap(body -> enroll(ctx, body))
                     .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(resp -> {
-                            },
-                            Sentry::captureException);
+                    .subscribe(resp -> {}, Sentry::captureException);
         }
     }
 
@@ -204,13 +204,13 @@ public class FazpassTd extends Fazpass{
             public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
                 super.onAuthenticationSucceeded(result);
                 Observable
-                        .create(subscriber -> {
+                        .<EnrollDeviceRequest>create(subscriber -> {
                             EnrollDeviceRequest body = collectDataEnroll(ctx, user, pin, true);
                             //Helper.sentryMessage("ENROLL_DEVICE_BY_FINGER", body);
                             subscriber.onNext(body);
                             subscriber.onComplete();
                         }).subscribeOn(Schedulers.newThread())
-                        .switchMap(body -> enroll(ctx, (EnrollDeviceRequest) body))
+                        .switchMap(body -> enroll(ctx, body))
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(resp-> {}, Sentry::captureException);
             }

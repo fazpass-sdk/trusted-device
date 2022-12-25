@@ -3,12 +3,10 @@ package com.fazpass.trusted_device;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
@@ -17,7 +15,6 @@ import com.fazpass.trusted_device.internet.request.HEAuthRequest;
 import com.fazpass.trusted_device.internet.request.OTPVerificationRequest;
 import com.fazpass.trusted_device.internet.request.OTPWithEmailRequest;
 import com.fazpass.trusted_device.internet.request.OTPWithPhoneRequest;
-import com.fazpass.trusted_device.internet.request.RemoveDeviceRequest;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,7 +23,6 @@ import java.util.List;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
-import io.sentry.Sentry;
 import io.sentry.android.core.SentryAndroid;
 
 public abstract class Fazpass extends TrustedDevice{
@@ -44,7 +40,7 @@ public abstract class Fazpass extends TrustedDevice{
             options.setDsn("https://1f85de8be5544aaab7847e377b4c6227@o1173329.ingest.sentry.io/6720667");
             options.setTracesSampleRate(1.0);
         });
-        switch (mode){
+        switch (mode) {
             case DEBUG:
                 Storage.storeDataLocal(context, BASE_URL, DEBUG);
                 break;
@@ -56,17 +52,6 @@ public abstract class Fazpass extends TrustedDevice{
                 break;
         }
         initializeMiscallListener(context);
-    }
-
-    /**
-     * @param activity -
-     * @param intent -
-     * @param requirePin -
-     */
-    public static void launchedFromNotification(Activity activity, @Nullable Intent intent, boolean requirePin, @Nullable Notification.DialogBuilder customDialogBuilder) {
-        if (intent != null) {
-            launchedFromNotification(activity, intent.getExtras(), requirePin, customDialogBuilder);
-        }
     }
 
     /**
@@ -91,11 +76,17 @@ public abstract class Fazpass extends TrustedDevice{
     public static void removeDevice(Context context, String pin, TrustedDeviceListener<Boolean> listener){
        validatePin(context, pin)
                .subscribeOn(Schedulers.newThread())
-               .switchMap(bool->{
-                   if(bool){
+               .switchMap(response->{
+                   if (response.getStatus()) {
                        return removeDevice(context, Storage.readDataLocal(context, USER_ID));
                    }
-                   throw new Exception("Validating pin failed");
+                   throw new Exception(response.getMessage());
+               })
+               .map(response->{
+                   if (response.getStatus()) {
+                       return true;
+                   }
+                   throw new Exception(response.getMessage());
                })
                .observeOn(AndroidSchedulers.mainThread())
                .subscribe(listener::onSuccess, listener::onFailure);
@@ -237,9 +228,5 @@ public abstract class Fazpass extends TrustedDevice{
 
         if (deniedPermissions.size() != 0)
             ActivityCompat.requestPermissions(activity, deniedPermissions.toArray(new String[0]), 1);
-    }
-
-    public static Notification.DialogBuilder notificationDialogBuilder(Context ctx) {
-        return new Notification.DialogBuilder(ctx);
     }
 }

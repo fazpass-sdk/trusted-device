@@ -26,37 +26,29 @@ public class NotificationService extends FirebaseMessagingService {
     @Override
     public void onMessageReceived(@NonNull RemoteMessage message) {
         super.onMessageReceived(message);
-        Log.e("ERROR","FIREBASE TEST");
-
         try {
-            String app = message.getData().get("app");
-            String status = message.getData().get("status");
-            String device = message.getData().get("device");
+            Notification notification = new Notification(message.getData());
 
-            if(Objects.equals(app, this.getPackageName())){
-                if(Objects.equals(status, "request")){
-                    String notificationId = message.getData().get("uuid_notif");
-                    String notificationToken = message.getData().get("notification_token");
-
+            if(Objects.equals(notification.getApp(), this.getPackageName())) {
+                if(Objects.equals(notification.getStatus(), "request")) {
                     String key = Storage.readDataLocal(this, PRIVATE_KEY);
-                    Log.e("NOTIFICATION", key);
-                    try{
+                    try {
                         Crypto.decrypt(Objects.requireNonNull(message.getData().get("meta")), key);
-                    }catch (Exception e){
+                    } catch (Exception e){
                         Log.e("ERROR", e.getMessage());
                     }
 
-                    showNotification(device, notificationId, notificationToken);
-                }else{
+                    showNotification(notification);
+                } else {
                     boolean isConfirmation = Objects.equals(message.getData().get("is_confirmation"), "yes");
 
                     Intent intent = new Intent(Notification.CROSS_DEVICE_CHANNEL);
-                    intent.putExtra(Notification.NOTIFICATION_DEVICE, device);
+                    intent.putExtra(Notification.NOTIFICATION_DEVICE, notification.getDevice());
                     intent.putExtra(Notification.NOTIFICATION_STATUS, isConfirmation);
                     LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
                 }
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             Log.e("ERROR",e.getMessage());
         }
     }
@@ -71,22 +63,32 @@ public class NotificationService extends FirebaseMessagingService {
         });*/
     }
 
-    public void showNotification(String device, String notificationId, String notificationToken){
+    public void showNotification(Notification notification) {
         String channelId = "notification";
-        int requestId = 201;
+        int requestId = Notification.NOTIFICATION_REQ_ID;
         int logo = getApplicationInfo().icon;
 
-        Intent contentIntent = NotificationActivity
-                .buildIntent(this, notificationId, notificationToken, device, requestId);
+        Intent contentIntent = FazpassCd.cdActivity;
+        if (contentIntent == null) return;
+        contentIntent.replaceExtras(notification.toExstras());
+        //contentIntent.putExtras(notification.toExstras());
         PendingIntent contentPendingIntent = PendingIntent.getActivity(
                 this, requestId, contentIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
         PendingIntent confirmPendingIntent = actionPendingIntent(
-                "com.fazpass.trusted_device.CONFIRM_STATUS", notificationId, requestId, device, notificationToken
+                FazpassCd.ACTION_CONFIRM,
+                notification.getNotificationId(),
+                requestId,
+                notification.getDevice(),
+                notification.getNotificationToken()
         );
         PendingIntent declinePendingIntent = actionPendingIntent(
-                "com.fazpass.trusted_device.DECLINE_STATUS", notificationId, requestId, device, notificationToken
+                FazpassCd.ACTION_DECLINE,
+                notification.getNotificationId(),
+                requestId,
+                notification.getDevice(),
+                notification.getNotificationToken()
         );
 
         Uri defaultSoundUri = getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
@@ -96,7 +98,7 @@ public class NotificationService extends FirebaseMessagingService {
                 .setContentTitle("Confirmation")
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setContentIntent(contentPendingIntent)
-                .setContentText("You are trying to login from device "+device.split(",")[1])
+                .setContentText("You are trying to login from device "+notification.getDevice().split(",")[1])
                 .setAutoCancel(false)
                 .setSound(defaultSoundUri)
                 .addAction(R.drawable.check, "YES",
@@ -120,7 +122,6 @@ public class NotificationService extends FirebaseMessagingService {
         Intent intent = new Intent(this, NotificationBroadcastReceiver.class);
         intent.setAction(action);
         intent.putExtra(Notification.NOTIFICATION_ID, notificationId);
-        intent.putExtra(Notification.NOTIFICATION_REQ_ID, requestId);
         intent.putExtra(Notification.NOTIFICATION_DEVICE, device);
         intent.putExtra(Notification.NOTIFICATION_TOKEN, notificationToken);
         return PendingIntent.getBroadcast(

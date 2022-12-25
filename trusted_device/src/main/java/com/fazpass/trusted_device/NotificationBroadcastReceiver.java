@@ -25,18 +25,26 @@ public class NotificationBroadcastReceiver extends BroadcastReceiver {
         NotificationManager notificationManager =
                 (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
 
-        if (Objects.equals(intent.getAction(), "com.fazpass.trusted_device.CONFIRM_STATUS")
-                || Objects.equals(intent.getAction(), "com.fazpass.trusted_device.DECLINE_STATUS")) {
+        if (Objects.equals(intent.getAction(), FazpassCd.ACTION_CONFIRM)
+                || Objects.equals(intent.getAction(), FazpassCd.ACTION_DECLINE)) {
 
             String userId = Storage.readDataLocal(ctx, USER_ID);
             String packageName = ctx.getPackageName();
 
             String notificationId = intent.getStringExtra(Notification.NOTIFICATION_ID);
-            int requestId = intent.getIntExtra(Notification.NOTIFICATION_REQ_ID, 0);
             String deviceName = intent.getStringExtra(Notification.NOTIFICATION_DEVICE);
             String notificationToken = intent.getStringExtra(Notification.NOTIFICATION_TOKEN);
-            String userResponse = Objects.equals(intent.getAction(), "com.fazpass.trusted_device.CONFIRM_STATUS")
+            String userResponse = Objects.equals(intent.getAction(), FazpassCd.ACTION_CONFIRM)
                     ? "yes" : "no";
+
+            String successMessage;
+            if (userResponse.equals("yes")) {
+                successMessage = "Login successfully accepted";
+            }
+            else {
+                successMessage = "Login successfully rejected";
+            }
+            String errorMessage = "Failed to respond. Please try again.";
 
             ConfirmStatusRequest body = new ConfirmStatusRequest(
                     userId, notificationId, deviceName,
@@ -47,11 +55,11 @@ public class NotificationBroadcastReceiver extends BroadcastReceiver {
                     .subscribeOn(Schedulers.newThread())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(
-                            resp-> Toast.makeText(ctx, resp.getMessage(), Toast.LENGTH_SHORT).show(),
-                            err-> Toast.makeText(ctx, "Failed to confirm login.", Toast.LENGTH_SHORT).show()
+                            resp-> Toast.makeText(ctx, successMessage, Toast.LENGTH_SHORT).show(),
+                            err-> Toast.makeText(ctx, errorMessage, Toast.LENGTH_SHORT).show()
                     );
 
-            notificationManager.cancel(requestId);
+            notificationManager.cancel(Notification.NOTIFICATION_REQ_ID);
         }
     }
 }

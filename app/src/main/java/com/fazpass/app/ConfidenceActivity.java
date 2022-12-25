@@ -14,8 +14,8 @@ import com.fazpass.trusted_device.ValidateStatus;
 
 public class ConfidenceActivity extends AppCompatActivity {
 
-    private final User user = new User("panda@me.com", "082213681285", "","","");
-    private final String pin = "123456";
+    private final User user = MainActivity.user;
+    private final String pin = MainActivity.pin;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

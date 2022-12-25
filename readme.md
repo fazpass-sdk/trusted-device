@@ -218,15 +218,34 @@ You can use this method when your client already registered with one phone numbe
         }
    });
 ```
-NB: For android 10 and higher make sure you add this line in your main activity launcher
+And then you have to declare this method in your main activity launcher
 ```java
-Fazpass.launchedFromNotification(activity, intent, isRequirePin, @Nullable customDialogBuilder);
+// if you use default confirmation activity
+FazpassCd.initialize(activity, isRequirePin, null);
+
+// if you use custom confirmation activity
+FazpassCd.initialize(activity, isRequirePin, YourCustomConfirmationActivity.class);
 ```
-It will show you dialog confirmation that required user to input PIN, before they can click button YES. <br>
+It will show you confirmation activity that asks user to input PIN (if pin is required), before they can click button YES. <br><br>
 ![alt text](https://firebasestorage.googleapis.com/v0/b/anvarisy-tech.appspot.com/o/default.png?alt=media&token=d1081877-77fa-42b3-b1a5-f5ed8a75f6ee) <br>
-This is your default view of your dialog. <br>
+This is your default view of your confirmation activity. <br><br>
 ![alt text](https://firebasestorage.googleapis.com/v0/b/anvarisy-tech.appspot.com/o/custom.png?alt=media&token=03f12926-7184-4733-8225-2f3e65ea0a6d) <br>
-Or you can also create your own dialog that will be used for your application
+Or you can also create your own custom activity that will be used for your application.<br>
+To get device information of login requester, call this method in your custom activity
+```java
+String device = getIntent().getStringExtra("device");
+```
+To accept incoming login confirmation
+```java
+// if pin is not required
+FazpassCd.onConfirm(activity);
+// if pin is required
+FazpassCd.onConfirm(activity, pin, callback);
+```
+To decline incoming login confirmation
+```java
+FazpassCd.onDecline(activity);
+```
 
 #### Remove Device
 It will remove that device and user.
