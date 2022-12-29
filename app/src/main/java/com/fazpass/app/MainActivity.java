@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -137,6 +138,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onIncomingMessage(String otp) {
                 Log.e("OTP", otp);
+                Toast.makeText(MainActivity.this, otp, Toast.LENGTH_SHORT).show();
             }
 
             @Override

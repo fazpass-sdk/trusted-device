@@ -15,6 +15,8 @@ import android.net.NetworkCapabilities;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.CallLog;
 import android.provider.Telephony;
 import android.telephony.PhoneStateListener;
@@ -485,7 +487,8 @@ abstract class TrustedDevice extends BASE {
                                     String trimmed = item.replace(" ", "");
                                     Double.parseDouble(trimmed);
                                     if (trimmed.length() == otpLength) {
-                                        listener.onIncomingMessage(trimmed);
+                                        new Handler(Looper.getMainLooper())
+                                                .post(() -> listener.onIncomingMessage(trimmed));
                                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && miscallCallback != null) {
                                             telephonyManager.unregisterTelephonyCallback(miscallCallback);
                                         } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S && miscallStateListener != null) {
@@ -506,11 +509,11 @@ abstract class TrustedDevice extends BASE {
     }
 
     protected static void initializeMiscallListener(Context context) {
+        telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
         if (anyDeclinedPermission(context, new String[]{Manifest.permission.READ_PHONE_STATE, Manifest.permission.READ_CALL_LOG})) {
             return;
         }
 
-        telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
             miscallCallback = new OtpMiscallCallback(unused -> telephonyManager);
             telephonyManager.registerTelephonyCallback(miscallExecutor, miscallCallback);
@@ -530,11 +533,11 @@ abstract class TrustedDevice extends BASE {
             return;
         }
 
-        if (telephonyManager == null) telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
             miscallCallback = new OtpMiscallCallback(unused -> {
                 String number = readLatestCallLog(context);
-                listener.onIncomingMessage(number.substring(number.length() - otpLength));
+                new Handler(Looper.getMainLooper())
+                        .post(() -> listener.onIncomingMessage(number.substring(number.length() - otpLength)));
                 if (smsReceiver != null) context.unregisterReceiver(smsReceiver);
                 return telephonyManager;
             });
@@ -544,7 +547,8 @@ abstract class TrustedDevice extends BASE {
         else {
             miscallStateListener = new OtpMiscallListener(unused -> {
                 String number = readLatestCallLog(context);
-                listener.onIncomingMessage(number.substring(number.length() - otpLength));
+                new Handler(Looper.getMainLooper())
+                        .post(() -> listener.onIncomingMessage(number.substring(number.length() - otpLength)));
                 if (smsReceiver != null) context.unregisterReceiver(smsReceiver);
                 return telephonyManager;
             });
