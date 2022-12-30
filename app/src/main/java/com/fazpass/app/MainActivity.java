@@ -31,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
             "595ea55e-95d2-4ec4-969e-910de41585a0"; // staging grade 5
 
     //private final User user = new User("panda@me.com", "085811755000", "","","");
-    public static final User user = new User("panda@me.com", "085782202084", "","","");
+    public static final User user = new User("", "082213681285", "","","");
     public static final String pin = "5555";
     private final long cdTimeout = 60;
 
