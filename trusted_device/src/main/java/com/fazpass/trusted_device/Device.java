@@ -1,37 +1,51 @@
 package com.fazpass.trusted_device;
 
-import android.annotation.SuppressLint;
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.net.NetworkRequest;
 import android.os.Build;
-import android.provider.Settings;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.scottyab.rootbeer.RootBeer;
 
 
 class Device {
     private final Context context;
+    private final ConnectivityManager connectivityManager;
     static String name;
     static String notificationToken;
 
     public Device(Context context) {
         this.context = context;
-        initialize(context);
-        FirebaseMessaging.getInstance().getToken()
-                .addOnCompleteListener(task -> {
-                    if (!task.isSuccessful()) {
-                        return;
-                    }
-                    notificationToken = task.getResult();
-                });
+        this.connectivityManager = context.getSystemService(ConnectivityManager.class);
+        initialize();
     }
 
-    private void initialize(Context context){
+    private void initialize(){
         Device.name = readMeta();
+
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_NETWORK_STATE) != PackageManager.PERMISSION_GRANTED) {
+            FirebaseMessaging.getInstance().getToken()
+                    .addOnCompleteListener(task -> {
+                        if (!task.isSuccessful()) {
+                            return;
+                        }
+                        notificationToken = task.getResult();
+                    });
+        } else {
+            NetworkRequest networkRequest = new NetworkRequest.Builder()
+                    .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                    .build();
+            connectivityManager.registerNetworkCallback(networkRequest, networkCallback);
+        }
     }
 
 /*    @SuppressLint("HardwareIds")
@@ -68,4 +82,28 @@ class Device {
         return rootBeer.isRooted();
     }
 
+    private final ConnectivityManager.NetworkCallback networkCallback = new ConnectivityManager.NetworkCallback() {
+        @Override
+        public void onAvailable(@NonNull Network network) {
+            super.onAvailable(network);
+            FirebaseMessaging.getInstance().getToken()
+                    .addOnCompleteListener(task -> {
+                        if (!task.isSuccessful()) {
+                            return;
+                        }
+                        notificationToken = task.getResult();
+                        connectivityManager.unregisterNetworkCallback(this);
+                    });
+        }
+
+        @Override
+        public void onLost(@NonNull Network network) {
+            super.onLost(network);
+        }
+
+        @Override
+        public void onCapabilitiesChanged(@NonNull Network network, @NonNull NetworkCapabilities networkCapabilities) {
+            super.onCapabilitiesChanged(network, networkCapabilities);
+        }
+    };
 }
