@@ -229,7 +229,7 @@ FazpassCd.initialize(activity, isRequirePin, YourCustomConfirmationActivity.clas
 It will show you confirmation activity that asks user to input PIN (if pin is required), before they can click button YES. <br><br>
 ![alt text](https://firebasestorage.googleapis.com/v0/b/anvarisy-tech.appspot.com/o/default.png?alt=media&token=d1081877-77fa-42b3-b1a5-f5ed8a75f6ee) <br>
 This is your default view of your confirmation activity. <br><br>
-![alt text](https://firebasestorage.googleapis.com/v0/b/anvarisy-tech.appspot.com/o/custom.png?alt=media&token=03f12926-7184-4733-8225-2f3e65ea0a6d) <br>
+![alt text](https://firebasestorage.googleapis.com/v0/b/anvarisy-tech.appspot.com/o/login.png?alt=media&token=bf17a8d9-2922-48d3-88e3-065631becd7d) <br>
 Or you can also create your own custom activity that will be used for your application.<br>
 To get device information of login requester, call this method in your custom activity
 ```java
