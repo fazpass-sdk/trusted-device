@@ -18,7 +18,7 @@ allprojects {
 ```
 
 ```
- implementation 'com.github.fazpass:fazpass-android-trusted-device-sdk:TAG'
+ com.github.fazpass-sdk:trusted-device:1.0.0
 ```
 ## Minimum OS
 API 24 / Android 7.0 / Nougat 
