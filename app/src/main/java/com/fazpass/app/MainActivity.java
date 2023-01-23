@@ -15,7 +15,6 @@ import com.fazpass.trusted_device.Fazpass;
 import com.fazpass.trusted_device.FazpassCd;
 import com.fazpass.trusted_device.FazpassTd;
 import com.fazpass.trusted_device.MODE;
-import com.fazpass.trusted_device.NotificationActivity;
 import com.fazpass.trusted_device.Otp;
 import com.fazpass.trusted_device.OtpResponse;
 import com.fazpass.trusted_device.TrustedDeviceListener;
@@ -42,7 +41,7 @@ public class MainActivity extends AppCompatActivity {
 
         Fazpass.initialize(this, MERCHANT_KEY, MODE.STAGING);
         Fazpass.requestPermission(this);
-        FazpassCd.initialize(this,true, NotificationActivity.class);
+        FazpassCd.initialize(this,true, true);
 
         Button enroll = findViewById(R.id.btnEnroll);
         enroll.setOnClickListener(this::onEnroll);

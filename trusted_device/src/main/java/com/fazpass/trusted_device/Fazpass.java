@@ -126,7 +126,7 @@ public abstract class Fazpass extends TrustedDevice{
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                         resp->{
-                            listener.onComplete(new OtpResponse(resp.getStatus(), resp.getMessage(), resp.getData().getId()));
+                            listener.onComplete(new OtpResponse(resp.getStatus(), resp.getMessage(), resp.getData().getId(), resp.getData().getOtpLength()));
 
                             startSMSListener(ctx, listener, resp.getData().getOtpLength());
                             startMiscallListener(ctx, listener, resp.getData().getOtpLength());
@@ -141,7 +141,7 @@ public abstract class Fazpass extends TrustedDevice{
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        resp->listener.onComplete(new OtpResponse(resp.getStatus(), resp.getMessage(), resp.getData().getId())),
+                        resp->listener.onComplete(new OtpResponse(resp.getStatus(), resp.getMessage(), resp.getData().getId(), resp.getData().getOtpLength())),
                         listener::onError);
     }
 
@@ -153,7 +153,7 @@ public abstract class Fazpass extends TrustedDevice{
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                         resp->{
-                            listener.onComplete(new OtpResponse(resp.getStatus(), resp.getMessage(), resp.getData().getId()));
+                            listener.onComplete(new OtpResponse(resp.getStatus(), resp.getMessage(), resp.getData().getId(), resp.getData().getOtpLength()));
 
                             startSMSListener(ctx, listener, resp.getData().getOtpLength());
                             startMiscallListener(ctx, listener, resp.getData().getOtpLength());
@@ -168,7 +168,7 @@ public abstract class Fazpass extends TrustedDevice{
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        resp->listener.onComplete(new OtpResponse(resp.getStatus(), resp.getMessage(), resp.getData().getId())),
+                        resp->listener.onComplete(new OtpResponse(resp.getStatus(), resp.getMessage(), resp.getData().getId(), resp.getData().getOtpLength())),
                         listener::onError);
     }
 

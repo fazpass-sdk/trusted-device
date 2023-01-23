@@ -1,12 +1,17 @@
 package com.fazpass.trusted_device;
 
+import static com.fazpass.trusted_device.Notification.CD_NOTIFICATION_CHANNEL;
+
 import android.app.Activity;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.widget.Toast;
 
-import androidx.annotation.Nullable;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import java.util.Objects;
 import java.util.function.Function;
@@ -19,47 +24,74 @@ public class FazpassCd {
     protected static final String ACTION_DECLINE = "com.fazpass.trusted_device.DECLINE_STATUS";
 
     protected static Intent cdActivity;
+    protected static Notification notification;
+    protected static boolean useDefaultActivity;
+    private static BroadcastReceiver notificationReceiver;
 
     /**
      * Initialize Cross Device.
      * @param activity Reference to the first activity to boot when aplication is started.
      * @param requirePin whether this cross device activity should ask for pin or not.
-     * @param crossDeviceActivity custom activity to ask user confirmation on an incoming cross device login.
-     *                            This activity class is NOT to be called manually.
-     *                            If null, default dialog activity for cross device will be used.
-     *                            <p>Usage : {@code CustomCrossDeviceActivity.class}</p>
+     * @param useDefaultActivity  if true, automatically handle cross device activity.
+     *                            otherwise cross device activity must be handled manually.
+     * @return boolean will be true if app is launched from cross device notification.
      */
-    public static void initialize(Activity activity, boolean requirePin, @Nullable Class<?> crossDeviceActivity) {
+    public static boolean initialize(Activity activity, boolean requirePin, boolean useDefaultActivity) {
+        FazpassCd.useDefaultActivity = useDefaultActivity;
         Notification.IS_REQUIRE_PIN = requirePin;
-        if (crossDeviceActivity != null) {
-            FazpassCd.cdActivity = new Intent(activity, crossDeviceActivity);
-        } else {
-            FazpassCd.cdActivity = NotificationActivity.buildIntent(activity);
-        }
 
         Bundle notificationExtras = activity.getIntent().getExtras();
         if (notificationExtras != null) {
-            Notification notification = new Notification(notificationExtras);
+            notification = new Notification(notificationExtras);
 
-            if (Objects.equals(notification.getApp(), activity.getPackageName())) {
-                if (Objects.equals(notification.getStatus(), "request")) {
-                    FazpassCd.cdActivity.putExtras(notificationExtras);
-                    FazpassCd.cdActivity.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
-                            | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    activity.startActivity(FazpassCd.cdActivity);
-                    activity.finish();
+            if (useDefaultActivity) {
+                FazpassCd.cdActivity = NotificationActivity.buildIntent(activity);
+
+                if (Objects.equals(notification.getApp(), activity.getPackageName())) {
+                    if (Objects.equals(notification.getStatus(), "request")) {
+                        FazpassCd.cdActivity.putExtras(notificationExtras);
+                        FazpassCd.cdActivity.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                                | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                        activity.startActivity(FazpassCd.cdActivity);
+                        //activity.finish();
+                    }
                 }
             }
         }
+
+        return notification != null;
+    }
+
+    /**
+     * Start notification listener. Used to handle incoming cross device notification while application is running.
+     * @param activity Reference to the activity.
+     * @param listener Called when there is an incoming cross device notification. String parameter will return their device information.
+     */
+    public static void startNotificationListener(Activity activity, Function<String, Void> listener) {
+        notificationReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                notification = new Notification(intent.getExtras());
+                listener.apply(notification.getDevice());
+            }
+        };
+        LocalBroadcastManager.getInstance(activity)
+                .registerReceiver(notificationReceiver, new IntentFilter(CD_NOTIFICATION_CHANNEL));
+    }
+
+    /**
+     * Stop notification listener. Stop handling incoming cross device notification.
+     * @param activity Reference to the activity that has started notification listener.
+     */
+    public static void stopNotificationListener(Activity activity) {
+        LocalBroadcastManager.getInstance(activity)
+                .unregisterReceiver(notificationReceiver);
     }
 
     /**
      * Accept incoming login confirmation from cross device notification.
      * @param activity Reference to your custom cross device activity.
-     * @throws RuntimeException If {@code requirePin} in {@link #initialize(Activity, boolean, Class) initialize} is set to true.
-     * @throws UnsupportedOperationException If activity argument is not referring to
-     * cross device activity initialized in {@link #initialize(Activity, boolean, Class) initialize}.
-     * @throws UnsupportedOperationException If cross device activity is started manually.
+     * @throws RuntimeException If {@code requirePin} in {@link #initialize(Activity, boolean, boolean) initialize} is set to true.
      */
     public static void onConfirm(Activity activity) {
         if (Notification.IS_REQUIRE_PIN) throw new RuntimeException("Pin is required according to initialize method.");
@@ -71,10 +103,7 @@ public class FazpassCd {
      * @param activity Reference to your custom cross device activity.
      * @param pin User inputted pin to validate.
      * @param pinValidationCallback Boolean argument will be true if pin is match and pin validation is successful. Otherwise it will be false.
-     * @throws RuntimeException If {@code requirePin} in {@link #initialize(Activity, boolean, Class) initialize} is set to false.
-     * @throws UnsupportedOperationException If activity argument is not referring to
-     * cross device activity initialized in {@link #initialize(Activity, boolean, Class) initialize}.
-     * @throws UnsupportedOperationException If cross device activity is started manually.
+     * @throws RuntimeException If {@code requirePin} in {@link #initialize(Activity, boolean, boolean) initialize} is set to false.
      */
     public static void onConfirmRequirePin(Activity activity, String pin, Function<Boolean, Void> pinValidationCallback) {
         if (!Notification.IS_REQUIRE_PIN) throw new RuntimeException("Pin is not required according to initialize method.");
@@ -102,20 +131,12 @@ public class FazpassCd {
     /**
      * Decline incoming login confirmation from cross device notification.
      * @param activity Reference to your custom cross device activity.
-     * @throws UnsupportedOperationException If activity argument is not referring to
-     * cross device activity initialized in {@link #initialize(Activity, boolean, Class) initialize}.
-     * @throws UnsupportedOperationException If cross device activity is started manually.
      */
     public static void onDecline(Activity activity) {
         sendBroadcast(activity, ACTION_DECLINE);
     }
 
-    private static void sendBroadcast(Activity activity, String action) throws UnsupportedOperationException {
-        Notification notification = null;
-        try {
-            notification = new Notification(activity.getIntent().getExtras());
-        } catch (Exception ignored) {}
-        if (notification == null) throw new UnsupportedOperationException();
+    private static void sendBroadcast(Activity activity, String action) {
         Intent intent = new Intent(activity, NotificationBroadcastReceiver.class);
         intent.setAction(action);
         assignIntentExtras(intent, notification);

@@ -31,14 +31,11 @@ public class NotificationService extends FirebaseMessagingService {
 
             if(Objects.equals(notification.getApp(), this.getPackageName())) {
                 if(Objects.equals(notification.getStatus(), "request")) {
-                    String key = Storage.readDataLocal(this, PRIVATE_KEY);
-                    try {
-                        Crypto.decrypt(Objects.requireNonNull(message.getData().get("meta")), key);
-                    } catch (Exception e){
-                        Log.e("ERROR", e.getMessage());
-                    }
+                    Intent intent = new Intent(Notification.CD_NOTIFICATION_CHANNEL);
+                    intent.putExtras(notification.toExstras());
+                    LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 
-                    showNotification(notification);
+                    //showNotification(notification);
                 } else {
                     boolean isConfirmation = Objects.equals(message.getData().get("is_confirmation"), "yes");
 
