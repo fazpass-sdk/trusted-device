@@ -5,6 +5,7 @@ import com.fazpass.trusted_device.internet.request.ConfirmStatusRequest;
 import com.fazpass.trusted_device.internet.request.EnrollDeviceRequest;
 import com.fazpass.trusted_device.internet.request.HEAuthRequest;
 import com.fazpass.trusted_device.internet.request.LastActiveRequest;
+import com.fazpass.trusted_device.internet.request.LogFraudRequest;
 import com.fazpass.trusted_device.internet.request.NotificationRequest;
 import com.fazpass.trusted_device.internet.request.OTPVerificationRequest;
 import com.fazpass.trusted_device.internet.request.OTPWithEmailRequest;
@@ -86,5 +87,6 @@ public interface UseCase {
     @GET("{path}")
     Observable<Response> HERedirectAuth(@Path("path") String path, @QueryMap Map<String, String> queries);
 
-
+    @POST("v1/trusted-device/log/fraud")
+    Observable<Response> logFraud(@Header("Authorization")String token, @Body LogFraudRequest body);
 }
