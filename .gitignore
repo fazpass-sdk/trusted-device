@@ -11,3 +11,5 @@ local.properties
 .idea/deploymentTargetDropDown.xml
 /sample_app/release/
 /node_modules
+.project
+.settings/org.eclipse.buildship.core.prefs

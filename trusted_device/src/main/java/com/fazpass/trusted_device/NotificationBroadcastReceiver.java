@@ -13,10 +13,12 @@ import android.widget.Toast;
 import com.fazpass.trusted_device.internet.Roaming;
 import com.fazpass.trusted_device.internet.UseCase;
 import com.fazpass.trusted_device.internet.request.ConfirmStatusRequest;
+import com.fazpass.trusted_device.internet.request.LogFraudRequest;
 
 import java.util.Objects;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class NotificationBroadcastReceiver extends BroadcastReceiver {
@@ -38,11 +40,14 @@ public class NotificationBroadcastReceiver extends BroadcastReceiver {
                     ? "yes" : "no";
 
             String successMessage;
+            int reason;
             if (userResponse.equals("yes")) {
                 successMessage = "Login successfully accepted";
+                reason = 1;
             }
             else {
                 successMessage = "Login successfully rejected";
+                reason = 3;
             }
             String errorMessage = "Failed to respond. Please try again.";
 
@@ -50,9 +55,17 @@ public class NotificationBroadcastReceiver extends BroadcastReceiver {
                     userId, notificationId, deviceName,
                     packageName, notificationToken, userResponse
             );
+            LogFraudRequest fraudBody = new LogFraudRequest(
+                    userId, deviceName, packageName, reason
+            );
             UseCase u = Roaming.start(Storage.readDataLocal(ctx,BASE_URL));
             u.confirmStatus("Bearer "+Storage.readDataLocal(ctx,MERCHANT_TOKEN), body)
                     .subscribeOn(Schedulers.newThread())
+                    .doOnError(err->{
+                        fraudBody.setReason(3);
+                        u.logFraud("Bearer "+Storage.readDataLocal(ctx,MERCHANT_TOKEN), fraudBody).subscribe();
+                    })
+                    .switchMap(resp->u.logFraud("Bearer "+Storage.readDataLocal(ctx,MERCHANT_TOKEN), fraudBody))
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(
                             resp-> Toast.makeText(ctx, successMessage, Toast.LENGTH_SHORT).show(),
