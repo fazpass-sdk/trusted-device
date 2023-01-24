@@ -60,7 +60,7 @@ public class NotificationService extends FirebaseMessagingService {
         });*/
     }
 
-    public void showNotification(Notification notification) {
+    /*public void showNotification(Notification notification) {
         String channelId = "notification";
         int requestId = Notification.NOTIFICATION_REQ_ID;
         int logo = getApplicationInfo().icon;
@@ -113,7 +113,7 @@ public class NotificationService extends FirebaseMessagingService {
             notificationManager.createNotificationChannel(channel);
         }
         notificationManager.notify(requestId, notificationBuilder.build());
-    }
+    }*/
 
     private PendingIntent actionPendingIntent(String action, String notificationId, int requestId, String device, String notificationToken) {
         Intent intent = new Intent(this, NotificationBroadcastReceiver.class);

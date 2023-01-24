@@ -11,6 +11,7 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import java.util.Objects;
@@ -23,43 +24,27 @@ public class FazpassCd {
     protected static final String ACTION_CONFIRM = "com.fazpass.trusted_device.CONFIRM_STATUS";
     protected static final String ACTION_DECLINE = "com.fazpass.trusted_device.DECLINE_STATUS";
 
-    protected static Intent cdActivity;
     protected static Notification notification;
-    protected static boolean useDefaultActivity;
     private static BroadcastReceiver notificationReceiver;
 
     /**
      * Initialize Cross Device.
      * @param activity Reference to the first activity to boot when aplication is started.
      * @param requirePin whether this cross device activity should ask for pin or not.
-     * @param useDefaultActivity  if true, automatically handle cross device activity.
-     *                            otherwise cross device activity must be handled manually.
-     * @return boolean will be true if app is launched from cross device notification.
+     * @return String representation of device information on cross device requester.
+     * Might return null if application is not launched from cross device notification.
      */
-    public static boolean initialize(Activity activity, boolean requirePin, boolean useDefaultActivity) {
-        FazpassCd.useDefaultActivity = useDefaultActivity;
+    @Nullable
+    public static String initialize(Activity activity, boolean requirePin) {
         Notification.IS_REQUIRE_PIN = requirePin;
 
         Bundle notificationExtras = activity.getIntent().getExtras();
         if (notificationExtras != null) {
             notification = new Notification(notificationExtras);
-
-            if (useDefaultActivity) {
-                FazpassCd.cdActivity = NotificationActivity.buildIntent(activity);
-
-                if (Objects.equals(notification.getApp(), activity.getPackageName())) {
-                    if (Objects.equals(notification.getStatus(), "request")) {
-                        FazpassCd.cdActivity.putExtras(notificationExtras);
-                        FazpassCd.cdActivity.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
-                                | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                        activity.startActivity(FazpassCd.cdActivity);
-                        //activity.finish();
-                    }
-                }
-            }
+            return notification.getDevice();
         }
 
-        return notification != null;
+        return null;
     }
 
     /**
@@ -91,7 +76,7 @@ public class FazpassCd {
     /**
      * Accept incoming login confirmation from cross device notification.
      * @param activity Reference to your custom cross device activity.
-     * @throws RuntimeException If {@code requirePin} in {@link #initialize(Activity, boolean, boolean) initialize} is set to true.
+     * @throws RuntimeException If {@code requirePin} in {@link #initialize(Activity, boolean) initialize} is set to true.
      */
     public static void onConfirm(Activity activity) {
         if (Notification.IS_REQUIRE_PIN) throw new RuntimeException("Pin is required according to initialize method.");
@@ -103,7 +88,7 @@ public class FazpassCd {
      * @param activity Reference to your custom cross device activity.
      * @param pin User inputted pin to validate.
      * @param pinValidationCallback Boolean argument will be true if pin is match and pin validation is successful. Otherwise it will be false.
-     * @throws RuntimeException If {@code requirePin} in {@link #initialize(Activity, boolean, boolean) initialize} is set to false.
+     * @throws RuntimeException If {@code requirePin} in {@link #initialize(Activity, boolean) initialize} is set to false.
      */
     public static void onConfirmRequirePin(Activity activity, String pin, Function<Boolean, Void> pinValidationCallback) {
         if (!Notification.IS_REQUIRE_PIN) throw new RuntimeException("Pin is not required according to initialize method.");
