@@ -188,7 +188,7 @@ public class FazpassTd extends Fazpass{
      * @param pin-
      * @author Anvarisy
      */
-    public void enrollDeviceByFinger(Context ctx, User user, String pin) {
+    public void enrollDeviceByFinger(Context ctx, User user, String pin, TrustedDeviceListener<Boolean> listener) {
         if(pin.equals("")){
             throw new NullPointerException("PIN cannot be null or empty");
         }
@@ -197,12 +197,14 @@ public class FazpassTd extends Fazpass{
             public void onAuthenticationError(int errorCode, @NonNull CharSequence errString) {
                 super.onAuthenticationError(errorCode, errString);
                 Exception e = Error.biometricError();
+                listener.onSuccess(false);
                 Sentry.captureException(e);
             }
 
             @Override
             public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
                 super.onAuthenticationSucceeded(result);
+                listener.onSuccess(true);
                 Observable
                         .<EnrollDeviceRequest>create(subscriber -> {
                             EnrollDeviceRequest body = collectDataEnroll(ctx, user, pin, true);
@@ -219,7 +221,9 @@ public class FazpassTd extends Fazpass{
             public void onAuthenticationFailed() {
                 super.onAuthenticationFailed();
                 Exception e = Error.biometricFailed();
+                listener.onSuccess(false);
                 Sentry.captureException(e);
+
             }
         });
     }

@@ -2,6 +2,7 @@ package com.fazpass.trusted_device;
 
 import static android.media.RingtoneManager.getDefaultUri;
 import static com.fazpass.trusted_device.BASE.PRIVATE_KEY;
+import static com.fazpass.trusted_device.Notification.NOTIFICATION_STATUS;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -25,10 +26,10 @@ import java.util.Objects;
 public class NotificationService extends FirebaseMessagingService {
     @Override
     public void onMessageReceived(@NonNull RemoteMessage message) {
+        Log.d("Fazpass", "Message arrive");
         super.onMessageReceived(message);
         try {
             Notification notification = new Notification(message.getData());
-
             if(Objects.equals(notification.getApp(), this.getPackageName())) {
                 if(Objects.equals(notification.getStatus(), "request")) {
                     String key = Storage.readDataLocal(this, PRIVATE_KEY);
@@ -37,14 +38,29 @@ public class NotificationService extends FirebaseMessagingService {
                     } catch (Exception e){
                         Log.e("ERROR", e.getMessage());
                     }
+                    if(FazpassCd.cdActivity == null){
+                        Log.d("Fazpass", "Null Intent");
+                        Intent intent = new Intent("react-notification-channel");
+                        intent.putExtras(notification.toExstras());
+                        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+                    }else{
+                        Log.d("Fazpass", "Intent filled");
+                        showNotification(notification);
+                    }
 
-                    showNotification(notification);
+
+/*                    if(!Notification.isCustomDialog){
+                        showNotification(notification);
+                    }else{
+
+                    }*/
+
                 } else {
                     boolean isConfirmation = Objects.equals(message.getData().get("is_confirmation"), "yes");
 
                     Intent intent = new Intent(Notification.CROSS_DEVICE_CHANNEL);
                     intent.putExtra(Notification.NOTIFICATION_DEVICE, notification.getDevice());
-                    intent.putExtra(Notification.NOTIFICATION_STATUS, isConfirmation);
+                    intent.putExtra(NOTIFICATION_STATUS, isConfirmation);
                     LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
                 }
             }

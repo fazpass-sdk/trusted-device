@@ -2,11 +2,16 @@ package com.fazpass.trusted_device;
 
 import android.app.Activity;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import java.util.Objects;
 import java.util.function.Function;
@@ -17,8 +22,7 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
 public class FazpassCd {
     protected static final String ACTION_CONFIRM = "com.fazpass.trusted_device.CONFIRM_STATUS";
     protected static final String ACTION_DECLINE = "com.fazpass.trusted_device.DECLINE_STATUS";
-
-    protected static Intent cdActivity;
+    protected static Intent cdActivity = null;
 
     /**
      * Initialize Cross Device.
@@ -53,6 +57,30 @@ public class FazpassCd {
         }
     }
 
+    public static void initialize(Activity activity, boolean requiredPin, Function<Bundle, Void> listener){
+        Notification.IS_REQUIRE_PIN = requiredPin;
+        if(activity.getIntent()==null){
+            listener.apply(new Bundle());
+        }else{
+            Bundle notificationExtras = activity.getIntent().getExtras();
+            listener.apply(notificationExtras);
+        }
+
+    }
+
+    public static void foreGroundListener(Activity activity, Function<Bundle, ?> action){
+
+        BroadcastReceiver b = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                action.apply(intent.getExtras());
+                Log.d("Fazpass",intent.getExtras().getString("device"));
+            }
+        };
+        LocalBroadcastManager.getInstance(activity)
+                .registerReceiver(b, new IntentFilter("react-notification-channel"));
+    }
+
     /**
      * Accept incoming login confirmation from cross device notification.
      * @param activity Reference to your custom cross device activity.
@@ -63,6 +91,12 @@ public class FazpassCd {
      */
     public static void onConfirm(Activity activity) {
         if (Notification.IS_REQUIRE_PIN) throw new RuntimeException("Pin is required according to initialize method.");
+        sendBroadcast(activity, ACTION_CONFIRM);
+    }
+
+    public static void onConfirm(Activity activity, Bundle bundle){
+        if (Notification.IS_REQUIRE_PIN) throw new RuntimeException("Pin is required according to initialize method.");
+        activity.getIntent().replaceExtras(bundle);
         sendBroadcast(activity, ACTION_CONFIRM);
     }
 
@@ -99,6 +133,11 @@ public class FazpassCd {
                 );
     }
 
+
+    public static void onConfirmRequirePin(Activity activity, String pin, Function<Boolean, Void> pinValidationCallback, Bundle bundle){
+        activity.getIntent().replaceExtras(bundle);
+        onConfirmRequirePin(activity, pin, pinValidationCallback);
+    }
     /**
      * Decline incoming login confirmation from cross device notification.
      * @param activity Reference to your custom cross device activity.
@@ -110,6 +149,10 @@ public class FazpassCd {
         sendBroadcast(activity, ACTION_DECLINE);
     }
 
+    public static void onDecline(Activity activity, Bundle bundle){
+        activity.getIntent().replaceExtras(bundle);
+        sendBroadcast(activity, ACTION_DECLINE);
+    }
     private static void sendBroadcast(Activity activity, String action) throws UnsupportedOperationException {
         Notification notification = null;
         try {

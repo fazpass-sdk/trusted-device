@@ -33,6 +33,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.biometric.BiometricManager;
 import androidx.biometric.BiometricPrompt;
 import androidx.core.content.ContextCompat;
+import androidx.core.os.ExecutorCompat;
 import androidx.fragment.app.FragmentActivity;
 
 import com.fazpass.trusted_device.internet.Response;

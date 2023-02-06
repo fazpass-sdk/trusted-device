@@ -42,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
 
         Fazpass.initialize(this, MERCHANT_KEY, MODE.STAGING);
         Fazpass.requestPermission(this);
-        FazpassCd.initialize(this,true, NotificationActivity.class);
+//        FazpassCd.initialize(this,true, NotificationActivity.class);
 
         Button enroll = findViewById(R.id.btnEnroll);
         enroll.setOnClickListener(this::onEnroll);

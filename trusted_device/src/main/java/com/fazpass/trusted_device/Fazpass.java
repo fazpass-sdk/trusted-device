@@ -3,8 +3,10 @@ package com.fazpass.trusted_device;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
@@ -15,6 +17,7 @@ import com.fazpass.trusted_device.internet.request.HEAuthRequest;
 import com.fazpass.trusted_device.internet.request.OTPVerificationRequest;
 import com.fazpass.trusted_device.internet.request.OTPWithEmailRequest;
 import com.fazpass.trusted_device.internet.request.OTPWithPhoneRequest;
+import com.google.firebase.FirebaseApp;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,11 +31,12 @@ import io.sentry.android.core.SentryAndroid;
 public abstract class Fazpass extends TrustedDevice{
 
     public static void initialize(Context context, String merchantToken, MODE mode){
+        FirebaseApp.initializeApp(context);
         if (merchantToken == null || merchantToken.equals("")){
             throw new NullPointerException("merchant id cannot be null or empty");
         }
         Device d = new Device(context);
-        if(EmulatorDetector.isEmulator() || d.isRooted()){
+        if(d.isEmulator() || d.isRooted()){
             throw new SecurityException("Device rooted or is an emulator lib stage");
         }
         Storage.storeDataLocal(context, MERCHANT_TOKEN, merchantToken);
