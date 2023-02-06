@@ -39,7 +39,7 @@ android {
 }
 
 def getVersionName = { ->
-    return "1.1.1"
+    return "1.0.1-react-native"
 }
 
 def getArtifactId = { ->
