@@ -18,7 +18,7 @@ allprojects {
 ```
 
 ```
- com.github.fazpass-sdk:trusted-device:1.0.0
+ com.github.fazpass-sdk:trusted-device:1.0.1
 ```
 ## Minimum OS
 API 24 / Android 7.0 / Nougat 
