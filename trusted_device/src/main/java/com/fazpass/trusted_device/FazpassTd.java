@@ -188,21 +188,20 @@ public class FazpassTd extends Fazpass{
      * @param pin-
      * @author Anvarisy
      */
-    public void enrollDeviceByFinger(Context ctx, User user, String pin) {
+    public void enrollDeviceByFinger(Context ctx, User user, String pin, TrustedDeviceListener<EnrollStatus> callback) {
         if(pin.equals("")){
             throw new NullPointerException("PIN cannot be null or empty");
         }
-        openBiometric(ctx, new BiometricPrompt.AuthenticationCallback() {
+        openBiometric(ctx, new BiometricAuthCallback() {
             @Override
-            public void onAuthenticationError(int errorCode, @NonNull CharSequence errString) {
-                super.onAuthenticationError(errorCode, errString);
+            public void onError() {
                 Exception e = Error.biometricError();
                 Sentry.captureException(e);
+                callback.onFailure(e);
             }
 
             @Override
-            public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
-                super.onAuthenticationSucceeded(result);
+            public void onSucceed() {
                 Observable
                         .<EnrollDeviceRequest>create(subscriber -> {
                             EnrollDeviceRequest body = collectDataEnroll(ctx, user, pin, true);
@@ -212,15 +211,16 @@ public class FazpassTd extends Fazpass{
                         }).subscribeOn(Schedulers.newThread())
                         .switchMap(body -> enroll(ctx, body))
                         .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(resp-> {}, Sentry::captureException);
+                        .subscribe(
+                                resp -> callback.onSuccess(new EnrollStatus(resp.getStatus(),resp.getMessage())),
+                                err -> {
+                                    callback.onFailure(err);
+                                    Sentry.captureException(err);
+                                });
             }
 
             @Override
-            public void onAuthenticationFailed() {
-                super.onAuthenticationFailed();
-                Exception e = Error.biometricFailed();
-                Sentry.captureException(e);
-            }
+            public void onFailed() {}
         });
     }
 

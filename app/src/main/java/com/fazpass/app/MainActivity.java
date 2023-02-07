@@ -46,6 +46,9 @@ public class MainActivity extends AppCompatActivity {
         Button enroll = findViewById(R.id.btnEnroll);
         enroll.setOnClickListener(this::onEnroll);
 
+        Button enrollFinger = findViewById(R.id.btnEnrollFinger);
+        enrollFinger.setOnClickListener(this::onEnrollFinger);
+
         Button validate = findViewById(R.id.btnValidate);
         validate.setOnClickListener(this::onValidateUser);
 
@@ -64,6 +67,31 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSuccess(FazpassTd o) {
                 o.enrollDeviceByPin(MainActivity.this, user, pin, new TrustedDeviceListener<EnrollStatus>() {
+                    @Override
+                    public void onSuccess(EnrollStatus o) {
+                        Log.e("Enroll", "status: "+o.getStatus());
+                        Log.e("Enroll", "message: "+o.getMessage());
+                    }
+
+                    @Override
+                    public void onFailure(Throwable err) {
+                        err.printStackTrace();
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Throwable err) {
+                err.printStackTrace();
+            }
+        });
+    }
+
+    private void onEnrollFinger(View v) {
+        Fazpass.check(this, user.getEmail(), user.getPhone(), new TrustedDeviceListener<FazpassTd>() {
+            @Override
+            public void onSuccess(FazpassTd o) {
+                o.enrollDeviceByFinger(MainActivity.this, user, pin, new TrustedDeviceListener<EnrollStatus>() {
                     @Override
                     public void onSuccess(EnrollStatus o) {
                         Log.e("Enroll", "status: "+o.getStatus());

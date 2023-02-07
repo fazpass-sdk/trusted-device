@@ -2,7 +2,6 @@ package com.fazpass.trusted_device;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -28,12 +27,7 @@ import android.util.ArrayMap;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
-import androidx.biometric.BiometricManager;
-import androidx.biometric.BiometricPrompt;
-import androidx.core.content.ContextCompat;
-import androidx.fragment.app.FragmentActivity;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.fazpass.trusted_device.internet.Response;
 import com.fazpass.trusted_device.internet.Roaming;
@@ -59,9 +53,6 @@ import com.fazpass.trusted_device.internet.response.OTPResponse;
 import com.fazpass.trusted_device.internet.response.RemoveDeviceResponse;
 import com.fazpass.trusted_device.internet.response.ValidateDeviceResponse;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -70,10 +61,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
-import at.favre.lib.crypto.bcrypt.BCrypt;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.functions.Consumer;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import io.sentry.Sentry;
 import kotlin.text.Regex;
@@ -87,16 +76,34 @@ abstract class TrustedDevice extends BASE {
 
 //    public abstract void check(Context ctx, String email, String phone, String pin, TrustedDeviceListener<FazpassTd> enroll);
 
-    protected void openBiometric(Context ctx, BiometricPrompt.AuthenticationCallback listener) {
-        Executor executor = ContextCompat.getMainExecutor(ctx);
-        BiometricPrompt biometricPrompt = new BiometricPrompt((FragmentActivity) ctx, executor, listener);
-        BiometricPrompt.PromptInfo promptInfo = new BiometricPrompt.PromptInfo.Builder()
-                .setTitle("Biometric Required")
-                .setSubtitle("")
-                .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
-                .setNegativeButtonText("Cancel")
-                .build();
-        biometricPrompt.authenticate(promptInfo);
+    protected void openBiometric(Context ctx, BiometricAuthCallback callback) {
+        FingerprintActivity activity = new FingerprintActivity();
+        Intent intent = new Intent(ctx, activity.getClass());
+        ctx.startActivity(intent);
+
+        BroadcastReceiver receiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String status = intent.getStringExtra("status");
+                switch (status) {
+                    case FingerprintActivity.ON_AUTH_SUCCEED:
+                        callback.onSucceed();
+                        LocalBroadcastManager.getInstance(ctx).unregisterReceiver(this);
+                        break;
+                    case FingerprintActivity.ON_AUTH_FAILED:
+                        callback.onFailed();
+                        break;
+                    case FingerprintActivity.ON_AUTH_ERROR:
+                        callback.onError();
+                        LocalBroadcastManager.getInstance(ctx).unregisterReceiver(this);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        };
+        LocalBroadcastManager.getInstance(ctx)
+                .registerReceiver(receiver, new IntentFilter(FingerprintActivity.FINGERPRINT_BROADCAST_CHANNEL));
     }
 
     protected static void initializeChecking(Context ctx) {
@@ -292,18 +299,16 @@ abstract class TrustedDevice extends BASE {
     }
 
     protected void validateUserByFinger(Context ctx, TrustedDeviceListener<ValidateStatus> listener) {
-        openBiometric(ctx, new BiometricPrompt.AuthenticationCallback() {
+        openBiometric(ctx, new BiometricAuthCallback() {
             @Override
-            public void onAuthenticationError(int errorCode, @NonNull CharSequence errString) {
-                super.onAuthenticationError(errorCode, errString);
+            public void onError() {
                 Exception e = Error.biometricError();
-                listener.onFailure(e);
                 Sentry.captureException(e);
+                listener.onFailure(e);
             }
 
             @Override
-            public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
-                super.onAuthenticationSucceeded(result);
+            public void onSucceed() {
                 //Helper.sentryMessage("VALIDATE_BY_FINGER", body);
                 Observable
                         .<ValidateDeviceRequest>create(subscriber -> {
@@ -330,12 +335,7 @@ abstract class TrustedDevice extends BASE {
             }
 
             @Override
-            public void onAuthenticationFailed() {
-                super.onAuthenticationFailed();
-                Exception e = Error.biometricFailed();
-                listener.onFailure(e);
-                Sentry.captureException(e);
-            }
+            public void onFailed() {}
         });
     }
 
