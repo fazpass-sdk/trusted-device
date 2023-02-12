@@ -12,25 +12,6 @@
         android:orientation="vertical">
 
         <Button
-            android:id="@+id/btnCheck"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="24dp"
-            android:layout_marginEnd="16dp"
-            android:text="Check" />
-
-        <TextView
-            android:id="@+id/textCheck"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="24dp"
-            android:layout_marginEnd="16dp"
-            android:text=""
-            android:textColor="@android:color/darker_gray" />
-
-        <Button
             android:id="@+id/btnEnroll"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

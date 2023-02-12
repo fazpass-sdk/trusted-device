@@ -10,9 +10,11 @@ import android.os.Handler;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.biometric.BiometricPrompt;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.fazpass.trusted_device.internet.request.EnrollDeviceRequest;
+import com.fazpass.trusted_device.internet.request.RemoveDeviceRequest;
 import com.fazpass.trusted_device.internet.response.CheckUserResponse;
 
 import org.json.JSONObject;
@@ -21,6 +23,7 @@ import java.util.UUID;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import io.sentry.Sentry;
 
