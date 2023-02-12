@@ -18,8 +18,9 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            minifyEnabled true
+            //proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            consumerProguardFiles 'consumer-rules.pro'
         }
     }
     compileOptions {
@@ -39,7 +40,7 @@ android {
 }
 
 def getVersionName = { ->
-    return "0.0.8"
+    return "1.0.3-flutter"
 }
 
 def getArtifactId = { ->

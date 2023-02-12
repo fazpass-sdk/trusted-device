@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -34,6 +35,8 @@ public class MainActivity extends AppCompatActivity {
     public static final String pin = "5555";
     private final long cdTimeout = 60;
 
+    private TextView textCheck;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -42,6 +45,10 @@ public class MainActivity extends AppCompatActivity {
         Fazpass.initialize(this, MERCHANT_KEY, MODE.STAGING);
         Fazpass.requestPermission(this);
         FazpassCd.initialize(this,true);
+
+        textCheck = findViewById(R.id.textCheck);
+        Button check = findViewById(R.id.btnCheck);
+        check.setOnClickListener(this::onCheck);
 
         Button enroll = findViewById(R.id.btnEnroll);
         enroll.setOnClickListener(this::onEnroll);
@@ -60,6 +67,20 @@ public class MainActivity extends AppCompatActivity {
 
         Button miscall = findViewById(R.id.btnMiscall);
         miscall.setOnClickListener(this::onMiscall);
+    }
+
+    private void onCheck(View v) {
+        Fazpass.check(this, user.getEmail(), user.getPhone(), new TrustedDeviceListener<FazpassTd>() {
+            @Override
+            public void onSuccess(FazpassTd o) {
+                textCheck.setText("cd: "+o.cd_status+" | td:"+o.td_status);
+            }
+
+            @Override
+            public void onFailure(Throwable err) {
+                err.printStackTrace();
+            }
+        });
     }
 
     private void onEnroll(View v) {
