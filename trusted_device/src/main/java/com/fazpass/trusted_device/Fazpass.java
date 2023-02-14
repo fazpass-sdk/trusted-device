@@ -190,12 +190,12 @@ public abstract class Fazpass extends TrustedDevice{
         HEAuthRequest body = new HEAuthRequest(gateway, phone);
         Observable
                 .create(emitter -> {
-                    if (!isTransportCellular(ctx)) {
+/*                    if (!isTransportCellular(ctx)) {
                         throw new Throwable("Internet not connected via cellular");
                     }
                     if (!isCarrierMatch(ctx, phone)) {
                         throw new Throwable("Phone number doesn't match it's carrier. ("+phone+")");
-                    }
+                    }*/
                     emitter.onNext(0);
                     emitter.onComplete();
                 })

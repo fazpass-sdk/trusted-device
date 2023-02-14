@@ -22,13 +22,15 @@ import com.fazpass.trusted_device.TrustedDeviceListener;
 import com.fazpass.trusted_device.User;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String MERCHANT_KEY =
+    public static final String MERCHANT_KEY =
             //"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZGVudGlmaWVyIjozfQ.1ye0zSaJgWPB5_SUU7oSDHKAs4tKjz_5RVtDnvc-HoE";
             //"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZGVudGlmaWVyIjozNn0.mfny8amysdJQYlCrUlYeA-u4EG1Dw9_nwotOl-0XuQ8"; // staging grade 3
-            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZGVudGlmaWVyIjo0fQ.WEV3bCizw9U_hxRC6DxHOzZthuJXRE8ziI3b6bHUpEI"; // staging grade 5
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZGVudGlmaWVyIjo0fQ.WEV3bCizw9U_hxRC6DxHOzZthuJXRE8ziI3b6bHUpEI";// staging grade 5
+    public static final String HE_KEY = "6cb0b024-9721-4243-9010-fd9e386157ec";
     private static final String MISCALL_KEY =
             //"9defc750-83d8-4167-93e4-4fdab80a3eaf"; // staging grade 3
             "595ea55e-95d2-4ec4-969e-910de41585a0"; // staging grade 5
+
 
     //private final User user = new User("panda@me.com", "085811755000", "","","");
     public static final User user = new User("", "082213681285", "","","");
