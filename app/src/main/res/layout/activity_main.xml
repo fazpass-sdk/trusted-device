@@ -30,6 +30,15 @@
             android:text="Validate" />
 
         <Button
+            android:id="@+id/btnHE"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="16dp"
+            android:text="Header Enrichment" />
+
+        <Button
             android:id="@+id/btnCrossDevice"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

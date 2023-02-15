@@ -2,7 +2,6 @@ package com.fazpass.trusted_device;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -10,8 +9,10 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
+import android.net.LinkProperties;
 import android.net.Network;
 import android.net.NetworkCapabilities;
+import android.net.NetworkRequest;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -26,10 +27,9 @@ import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.util.ArrayMap;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.biometric.BiometricManager;
 import androidx.biometric.BiometricPrompt;
 import androidx.core.content.ContextCompat;
@@ -59,21 +59,18 @@ import com.fazpass.trusted_device.internet.response.OTPResponse;
 import com.fazpass.trusted_device.internet.response.RemoveDeviceResponse;
 import com.fazpass.trusted_device.internet.response.ValidateDeviceResponse;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import at.favre.lib.crypto.bcrypt.BCrypt;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.functions.Consumer;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import io.sentry.Sentry;
 import kotlin.text.Regex;
@@ -602,18 +599,55 @@ abstract class TrustedDevice extends BASE {
         return bannedNetworkTransports.stream().noneMatch(caps::hasTransport);
     }
 
+    protected static void forceConnectionToMobileIfPresent(Context context, ConnectivityManager connectivityManager, Function<Boolean, ?> callback) {
+        if (anyDeclinedPermission(context, new String[]{Manifest.permission.CHANGE_NETWORK_STATE})) {
+            String err = "CHANGE_NETWORK_STATE permission is not granted. Hence, autoswitch connection to mobile is disabled.";
+            Log.e("PERMISSION NOT GRANTED", err);
+            throw new SecurityException(err);
+        }
+
+        try {
+            Handler timeoutHandler = new Handler(context.getMainLooper());
+
+            NetworkRequest req = new NetworkRequest.Builder()
+                    .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+                    .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                    .build();
+            CustomNetworkCallback networkCallback = new CustomNetworkCallback() {
+                @Override
+                public void onAvailable(@NonNull Network network) {
+                    super.onAvailable(network);
+                    timeoutHandler.removeCallbacks(timeoutRunnable);
+                    connectivityManager.bindProcessToNetwork(network);
+                    callback.apply(true);
+                    connectivityManager.unregisterNetworkCallback(this);
+                }
+
+                @Override
+                void onNotAvailable() {
+                    callback.apply(false);
+                    connectivityManager.unregisterNetworkCallback(this);
+                }
+            };
+
+            timeoutHandler.postDelayed(networkCallback.timeoutRunnable, 1000);
+            connectivityManager.requestNetwork(req, networkCallback);
+        } catch (Exception e) {
+            Log.e("HE_ERR", e.toString());
+        }
+    }
+
     @SuppressLint("MissingPermission")
-    protected static boolean isCarrierMatch(Context context, String phone) throws Throwable {
+    protected static boolean isCarrierMatch(Context context, String phone) {
         if (anyDeclinedPermission(context, new String[]{Manifest.permission.READ_PHONE_STATE})) {
             String err = "READ_PHONE_STATE permission is not granted. Hence, Header Enrichment request failed.";
             Log.e("PERMISSION NOT GRANTED", err);
-            throw new Throwable(err);
+            throw new SecurityException(err);
         }
 
         SubscriptionManager subscriptionManager = SubscriptionManager.from(context);
         SubscriptionInfo info = subscriptionManager.getActiveSubscriptionInfo(SubscriptionManager.getDefaultDataSubscriptionId());
         String carrierName = info.getCarrierName().toString();
-        Log.e("CARRIER NAME", carrierName);
 
         boolean is0First = phone.startsWith("0");
         if (is0First && phone.length() < 3) return false;
@@ -635,5 +669,10 @@ abstract class TrustedDevice extends BASE {
             }
         }
         return declined;
+    }
+
+    private static abstract class CustomNetworkCallback extends ConnectivityManager.NetworkCallback {
+        final Runnable timeoutRunnable = this::onNotAvailable;
+        abstract void onNotAvailable();
     }
 }
