@@ -39,7 +39,7 @@ android {
 }
 
 def getVersionName = { ->
-    return "1.0.3-flutter"
+    return "1.0.4-flutter"
 }
 
 def getArtifactId = { ->
