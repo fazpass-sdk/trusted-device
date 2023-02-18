@@ -18,7 +18,7 @@ allprojects {
 ```
 
 ```
- com.github.fazpass-sdk:trusted-device:1.0.0
+ com.github.fazpass-sdk:trusted-device:1.0.1
 ```
 ## Minimum OS
 API 24 / Android 7.0 / Nougat 
@@ -47,18 +47,20 @@ As default this SDK used these permissions
     <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <uses-permission android:name="android.permission.READ_CALL_LOG"/>
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE"/>
 ```
 So make sure you request all of these permission as a requirement.
 #### 
-| Permission                    | Detail            |
-| -------------                 |:-------------:    |
-| Coarse Location               | Will be used to read user location for detecting fraud access  |
-| Read Phone State              | Will be used to detect root phone, emulator, or cloning, also will be used for Header Enrichment        |
-| Read Phone Number             | Will be used to read SIM serial position. it will affect with confidence rate result |
-| Read Contacts                 | Will be used to read user contact. It will affect with confidence rate result  |
-| Use Biometric                 | Will be used to open biometric dialog in user phone            |
-| Receive SMS                   | Will be used to auto read sms when OTP come by SMS           |
-| Read Call Log                 | Will be used to auto read otp when OTP come by missed call           |
+| Permission           |                                              Detail                                              |
+|----------------------|:------------------------------------------------------------------------------------------------:|
+| Coarse Location      |                  Will be used to read user location for detecting fraud access                   |
+| Read Phone State     | Will be used to detect root phone, emulator, or cloning, also will be used for Header Enrichment |
+| Read Phone Number    |       Will be used to read SIM serial position. it will affect with confidence rate result       |
+| Read Contacts        |          Will be used to read user contact. It will affect with confidence rate result           |
+| Use Biometric        |                       Will be used to open biometric dialog in user phone                        |
+| Receive SMS          |                        Will be used to auto read sms when OTP come by SMS                        |
+| Read Call Log        |                    Will be used to auto read otp when OTP come by missed call                    |
+| Change Network State |                 Will be used to autoswitch connection to mobile on HE validation                 |
 
 
 ## Usage

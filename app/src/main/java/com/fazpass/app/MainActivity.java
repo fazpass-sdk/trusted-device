@@ -14,6 +14,7 @@ import com.fazpass.trusted_device.EnrollStatus;
 import com.fazpass.trusted_device.Fazpass;
 import com.fazpass.trusted_device.FazpassCd;
 import com.fazpass.trusted_device.FazpassTd;
+import com.fazpass.trusted_device.HeaderEnrichment;
 import com.fazpass.trusted_device.MODE;
 import com.fazpass.trusted_device.Otp;
 import com.fazpass.trusted_device.OtpResponse;
@@ -28,9 +29,10 @@ public class MainActivity extends AppCompatActivity {
     private static final String MISCALL_KEY =
             //"9defc750-83d8-4167-93e4-4fdab80a3eaf"; // staging grade 3
             "595ea55e-95d2-4ec4-969e-910de41585a0"; // staging grade 5
+    private static final String HE_KEY = "6cb0b024-9721-4243-9010-fd9e386157ec";
 
     //private final User user = new User("panda@me.com", "085811755000", "","","");
-    public static final User user = new User("", "082213681285", "","","");
+    public static final User user = new User("", "PHONE_NUMBER", "","","");
     public static final String pin = "5555";
     private final long cdTimeout = 60;
 
@@ -51,6 +53,9 @@ public class MainActivity extends AppCompatActivity {
 
         Button validate = findViewById(R.id.btnValidate);
         validate.setOnClickListener(this::onValidateUser);
+
+        Button he = findViewById(R.id.btnHE);
+        he.setOnClickListener(this::onHE);
 
         Button crossDevice = findViewById(R.id.btnCrossDevice);
         crossDevice.setOnClickListener(this::onValidateCrossDevice);
@@ -114,6 +119,20 @@ public class MainActivity extends AppCompatActivity {
 
     private void onValidateUser(View v) {
         startActivity(new Intent(this, ConfidenceActivity.class));
+    }
+
+    private void onHE(View view) {
+        Fazpass.heValidation(this, user.getPhone(), HE_KEY, new HeaderEnrichment.Request() {
+            @Override
+            public void onComplete(boolean status) {
+                Log.e("HE", "status: "+ status);
+            }
+
+            @Override
+            public void onError(Throwable err) {
+                err.printStackTrace();
+            }
+        });
     }
 
     private void onValidateCrossDevice(View v) {

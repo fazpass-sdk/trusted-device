@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.net.ConnectivityManager;
 import android.os.Build;
 
 import androidx.annotation.NonNull;
@@ -183,23 +184,43 @@ public abstract class Fazpass extends TrustedDevice{
 
     public static void heValidation(Context ctx, String phone, String gateway, HeaderEnrichment.Request listener){
         initializeChecking(ctx);
+        ConnectivityManager connectivityManager = (ConnectivityManager) ctx.getSystemService(Context.CONNECTIVITY_SERVICE);
         HEAuthRequest body = new HEAuthRequest(gateway, phone);
+
         Observable
                 .create(emitter -> {
-                    if (!isTransportCellular(ctx)) {
-                        throw new Throwable("Internet not connected via cellular");
-                    }
                     if (!isCarrierMatch(ctx, phone)) {
                         throw new Throwable("Phone number doesn't match it's carrier. ("+phone+")");
                     }
-                    emitter.onNext(0);
-                    emitter.onComplete();
+                    // if user granted CHANGE_NETWORK_STATE permission, autoswitch connection to cellular transport if possible
+                    try {
+                        forceConnectionToMobileIfPresent(ctx, connectivityManager, (isSuccess) -> {
+                            if (isSuccess) {
+                                emitter.onNext(true);
+                                emitter.onComplete();
+                            } else {
+                                emitter.onError(new Throwable("Internet not connected via cellular"));
+                            }
+                            return null;
+                        });
+                    }
+                    // otherwise, check if user is not on cellular transport
+                    catch (SecurityException e) {
+                        if (!isTransportCellular(ctx)) {
+                            throw new Throwable("Internet not connected via cellular");
+                        }
+                        emitter.onNext(true);
+                        emitter.onComplete();
+                    }
                 })
                 .subscribeOn(Schedulers.newThread())
                 .switchMap(data -> getAuthPage(ctx, body))
                 .switchMap(data -> launchAuthPage(data.getData().getAuthPage()))
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(resp -> listener.onComplete(resp.getStatus()), listener::onError);
+                .subscribe(
+                        resp -> listener.onComplete(resp.getStatus()),
+                        listener::onError,
+                        () -> connectivityManager.bindProcessToNetwork(null));
     }
 
     public static void requestPermission(Activity activity) {
@@ -210,7 +231,8 @@ public abstract class Fazpass extends TrustedDevice{
                 Manifest.permission.ACCESS_COARSE_LOCATION,
                 Manifest.permission.INTERNET,
                 Manifest.permission.ACCESS_NETWORK_STATE,
-                Manifest.permission.READ_CONTACTS
+                Manifest.permission.READ_CONTACTS,
+                Manifest.permission.CHANGE_NETWORK_STATE
         ));
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             requiredPermissions.add(Manifest.permission.READ_PHONE_NUMBERS);
