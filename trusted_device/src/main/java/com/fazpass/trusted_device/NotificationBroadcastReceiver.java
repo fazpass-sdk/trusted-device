@@ -68,10 +68,7 @@ public class NotificationBroadcastReceiver extends BroadcastReceiver {
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(
                             resp-> Toast.makeText(ctx, successMessage, Toast.LENGTH_SHORT).show(),
-                            err-> {
-                                err.printStackTrace();
-                                Toast.makeText(ctx, errorMessage, Toast.LENGTH_SHORT).show();
-                            }
+                            err-> Toast.makeText(ctx, errorMessage, Toast.LENGTH_SHORT).show()
                     );
 
             notificationManager.cancel(Notification.NOTIFICATION_REQ_ID);
