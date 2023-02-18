@@ -6,6 +6,7 @@ import java.util.Map;
 
 class Notification {
     static final String CROSS_DEVICE_CHANNEL = "cross_device_channel";
+    static final String CD_NOTIFICATION_CHANNEL = "cross_device_notification_channel";
 
     static final String NOTIFICATION_APP = "app";
     static final String NOTIFICATION_DEVICE = "device";

@@ -2,7 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="com.fazpass.trusted_device">
-    <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
+
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -12,16 +13,25 @@
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <uses-permission android:name="android.permission.READ_CALL_LOG" />
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE"/>
+    
     <application
         android:usesCleartextTraffic="true"
         tools:ignore="MissingClass">
         <activity
-            android:name=".NotificationActivity"
-            android:taskAffinity=""
-            android:launchMode="singleTask"
+            android:name=".FingerprintActivity"
             android:excludeFromRecents="true"
-            android:theme="@style/Transparent"
-            android:exported="true">
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:taskAffinity=""
+            android:theme="@style/Transparent">
+        </activity>
+        <activity
+            android:name=".NotificationActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:taskAffinity=""
+            android:theme="@style/Transparent">
         </activity>
 
         <meta-data
@@ -38,18 +48,18 @@
             android:name=".NotificationService"
             android:exported="false">
             <intent-filter>
-                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
 
-        <receiver android:name=".NotificationBroadcastReceiver" android:exported="false">
+        <receiver
+            android:name=".NotificationBroadcastReceiver"
+            android:exported="false">
             <intent-filter>
                 <action android:name="com.fazpass.trusted_device.CONFIRM_STATUS" />
                 <action android:name="com.fazpass.trusted_device.DECLINE_STATUS" />
             </intent-filter>
         </receiver>
-
-
     </application>
 
 </manifest>

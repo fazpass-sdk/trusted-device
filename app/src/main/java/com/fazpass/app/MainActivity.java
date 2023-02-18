@@ -16,7 +16,6 @@ import com.fazpass.trusted_device.FazpassCd;
 import com.fazpass.trusted_device.FazpassTd;
 import com.fazpass.trusted_device.HeaderEnrichment;
 import com.fazpass.trusted_device.MODE;
-import com.fazpass.trusted_device.NotificationActivity;
 import com.fazpass.trusted_device.Otp;
 import com.fazpass.trusted_device.OtpResponse;
 import com.fazpass.trusted_device.TrustedDeviceListener;
@@ -44,10 +43,13 @@ public class MainActivity extends AppCompatActivity {
 
         Fazpass.initialize(this, MERCHANT_KEY, MODE.STAGING);
         Fazpass.requestPermission(this);
-        FazpassCd.initialize(this,true, NotificationActivity.class);
+        FazpassCd.initialize(this,true);
 
         Button enroll = findViewById(R.id.btnEnroll);
         enroll.setOnClickListener(this::onEnroll);
+
+        Button enrollFinger = findViewById(R.id.btnEnrollFinger);
+        enrollFinger.setOnClickListener(this::onEnrollFinger);
 
         Button validate = findViewById(R.id.btnValidate);
         validate.setOnClickListener(this::onValidateUser);
@@ -70,6 +72,31 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSuccess(FazpassTd o) {
                 o.enrollDeviceByPin(MainActivity.this, user, pin, new TrustedDeviceListener<EnrollStatus>() {
+                    @Override
+                    public void onSuccess(EnrollStatus o) {
+                        Log.e("Enroll", "status: "+o.getStatus());
+                        Log.e("Enroll", "message: "+o.getMessage());
+                    }
+
+                    @Override
+                    public void onFailure(Throwable err) {
+                        err.printStackTrace();
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Throwable err) {
+                err.printStackTrace();
+            }
+        });
+    }
+
+    private void onEnrollFinger(View v) {
+        Fazpass.check(this, user.getEmail(), user.getPhone(), new TrustedDeviceListener<FazpassTd>() {
+            @Override
+            public void onSuccess(FazpassTd o) {
+                o.enrollDeviceByFinger(MainActivity.this, user, pin, new TrustedDeviceListener<EnrollStatus>() {
                     @Override
                     public void onSuccess(EnrollStatus o) {
                         Log.e("Enroll", "status: "+o.getStatus());

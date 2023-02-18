@@ -4,11 +4,13 @@ public class OtpResponse {
     private final boolean status;
     private final String message;
     private final String otpId;
+    private final int otpLength;
 
-    public OtpResponse(boolean status, String message, String otpId) {
+    public OtpResponse(boolean status, String message, String otpId, int otpLength) {
         this.status = status;
         this.message = message;
         this.otpId = otpId;
+        this.otpLength = otpLength;
     }
 
     public boolean isStatus() {
@@ -21,5 +23,9 @@ public class OtpResponse {
 
     public String getOtpId() {
         return otpId;
+    }
+
+    public int getOtpLength() {
+        return otpLength;
     }
 }
