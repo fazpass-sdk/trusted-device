@@ -3,9 +3,9 @@
 This is the Official Android wrapper/library for Fazpass Trusted Device, that is compatible with Gradle.
 Visit https://fazpass.com for more information about the product and see documentation at http://docs.fazpass.com for more technical details.
 - [1. Installation](#1-Installation)
-- [2. OTP Feature](#2-OTP Feature)
-- [3. Header Enrichment Feature](#3-Header Enrichment Feature)
-- [4. Trusted Device Feature](#4-Trusted Device Feature)
+- [2. OTP Feature](#2-OTP)
+- [3. Header Enrichment Feature](#3-Header)
+- [4. Trusted Device Feature](#4-Trusted)
 
 ## 1. Installation
 Gradle
