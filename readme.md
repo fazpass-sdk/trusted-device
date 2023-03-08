@@ -268,7 +268,7 @@ Fazpass.removeDevice(Context, "PIN", new TrustedDeviceListener<RemoveStatus>{
 
 
 ### Permission
-As default this SDK used these permissions
+To give best result of confidence rate, make sure you enable this permission
 ```xml
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -279,8 +279,6 @@ As default this SDK used these permissions
 
 
 ```
-To give best result of confidence rate, make sure you enable this permission
-
 | Permission           |                                              Detail                                              |
 |----------------------|:------------------------------------------------------------------------------------------------:|
 | Coarse Location      |                  Will be used to read user location for detecting fraud access                   |
