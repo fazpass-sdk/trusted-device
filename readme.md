@@ -2,8 +2,12 @@
 
 This is the Official Android wrapper/library for Fazpass Trusted Device, that is compatible with Gradle.
 Visit https://fazpass.com for more information about the product and see documentation at http://docs.fazpass.com for more technical details.
+- [1. Installation](#1-Installation)
+- [2. OTP Feature](#2-OTP Feature)
+- [3. Header Enrichment Feature](#3-Header Enrichment Feature)
+- [4. Trusted Device Feature](#4-Trusted Device Feature)
 
-## Installation
+## 1. Installation
 Gradle
 ```groovy
 allprojects {
@@ -20,10 +24,10 @@ allprojects {
 ```
  com.github.fazpass-sdk:trusted-device:1.0.1
 ```
-## Minimum OS
+### Minimum OS
 API 24 / Android 7.0 / Nougat 
 
-## Target SDK
+### Target SDK
 We use newest version of androidx library so make sure you use this configuration
 ```gradle
  android {
@@ -35,36 +39,6 @@ We use newest version of androidx library so make sure you use this configuratio
         .....
  
 ```
-## Permission
-As default this SDK used these permissions
-```xml
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-    <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
-    <uses-permission android:name="android.permission.READ_CONTACTS" />
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
-    <uses-permission android:name="android.permission.RECEIVE_SMS" />
-    <uses-permission android:name="android.permission.READ_CALL_LOG"/>
-    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE"/>
-```
-So make sure you request all of these permission as a requirement.
-#### 
-| Permission           |                                              Detail                                              |
-|----------------------|:------------------------------------------------------------------------------------------------:|
-| Coarse Location      |                  Will be used to read user location for detecting fraud access                   |
-| Read Phone State     | Will be used to detect root phone, emulator, or cloning, also will be used for Header Enrichment |
-| Read Phone Number    |       Will be used to read SIM serial position. it will affect with confidence rate result       |
-| Read Contacts        |          Will be used to read user contact. It will affect with confidence rate result           |
-| Use Biometric        |                       Will be used to open biometric dialog in user phone                        |
-| Receive SMS          |                        Will be used to auto read sms when OTP come by SMS                        |
-| Read Call Log        |                    Will be used to auto read otp when OTP come by missed call                    |
-| Change Network State |                 Will be used to autoswitch connection to mobile on HE validation                 |
-
-
-## Usage
-
 ### Initialize
 You only need call this method once in the first page of your app
 ```java
@@ -74,7 +48,8 @@ MERCHANT_KEY is unique string when you registered as a fazpass client.
 (You can check your email after registered to get it) <br>
 TD_MODE is type of mode, you can choose between staging or production.
 
-### OTP
+
+## 2. OTP Feature
 We have request OTP by email and by phone. Same as like the API we also have generate Otp function if you want to use it.
 #### Requesting Method
 ```java
@@ -109,7 +84,20 @@ We have request OTP by email and by phone. Same as like the API we also have gen
         }
     });
 ```
-### Header Enrichment
+### Permission
+If you want get auto read OTP you can enable this permission
+```xml
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.READ_CALL_LOG"/>
+```
+ 
+| Permission           |                                              Detail                                              |
+|----------------------|:------------------------------------------------------------------------------------------------:|
+| Receive SMS          |                        Will be used to auto read sms when OTP come by SMS                        |
+| Read Call Log        |                    Will be used to auto read otp when OTP come by missed call                    |
+
+## 3. Header Enrichment Feature
 Header enrichment will make you more confidence, because it will match between data roaming and sim that registered in that phone.<br>
 The result, your app can't validate phone number that is not inside that phone.
 ```java
@@ -125,7 +113,19 @@ The result, your app can't validate phone number that is not inside that phone.
         }
    });
 ```
-### Trusted Device
+### Permission
+```xml
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE"/>
+```
+| Permission           |                                              Detail                                              |
+|----------------------|:------------------------------------------------------------------------------------------------:|
+| Read Phone State     | Will be used to detect root phone, emulator, or cloning, also will be used for Header Enrichment |
+| Change Network State |                 Will be used to autoswitch connection to mobile on HE validation                 |
+
+
+## 4.Trusted Device
 First of all you need to call this method in the main class of your application
 ```java
 Fazpass.initialize(this, MERCHANT_KEY,MODE.STAGING);
@@ -265,3 +265,26 @@ Fazpass.removeDevice(Context, "PIN", new TrustedDeviceListener<RemoveStatus>{
     
 });
 ```
+
+
+### Permission
+As default this SDK used these permissions
+```xml
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
+
+
+```
+To give best result of confidence rate, make sure you enable this permission
+
+| Permission           |                                              Detail                                              |
+|----------------------|:------------------------------------------------------------------------------------------------:|
+| Coarse Location      |                  Will be used to read user location for detecting fraud access                   |
+| Read Phone State     | Will be used to detect root phone, emulator, or cloning, also will be used for Header Enrichment |
+| Read Phone Number    |       Will be used to read SIM serial position. it will affect with confidence rate result       |
+| Read Contacts        |          Will be used to read user contact. It will affect with confidence rate result           |
+| Use Biometric        |                       Will be used to open biometric dialog in user phone                        |
